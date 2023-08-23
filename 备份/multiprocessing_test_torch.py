@@ -120,6 +120,6 @@ if __name__ == '__main__':
     rtsp_urls = [
         "rtsp://admin:123456@192.168.100.37:554/h264/ch1/stream"
     ]
-    save_dir = "data/"
-    model_path = "models/yolov8s.pt"
+    save_dir = "../data/"
+    model_path = "../models/yolov8s.pt"
     run_multi_camera(rtsp_urls,model_path,save_dir)

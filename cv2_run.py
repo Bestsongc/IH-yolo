@@ -270,22 +270,22 @@ def run_detect(source):
 
 def run_program():
     # 读取source.streams中的每一行作为一个线程的source作为参数，启动一个线程
-    run_detect('rtsp://admin:admin@192.168.3.111:8554/live')
+    # run_detect('rtsp://admin:admin@192.168.3.111:8554/live')
 
-    # with open('source.streams', 'r') as f:
-    #     sources = f.readlines()
-    # # 去掉每行末尾的换行符
-    # sources = [x.strip() for x in sources]
-    # # 去掉空行
-    # sources = [x for x in sources if x != '']
-    # # 去掉注释行
-    # sources = [x for x in sources if x[0] != '#']
-    # # 启动线程
-    # for source in sources:
-    #     # 创建线程
-    #     thread = threading.Thread(target=run_detect, args=(source,))
-    #     # 启动线程
-    #     thread.start()
+    with open('source.streams', 'r') as f:
+        sources = f.readlines()
+    # 去掉每行末尾的换行符
+    sources = [x.strip() for x in sources]
+    # 去掉空行
+    sources = [x for x in sources if x != '']
+    # 去掉注释行
+    sources = [x for x in sources if x[0] != '#']
+    # 启动线程
+    for source in sources:
+        # 创建线程
+        thread = threading.Thread(target=run_detect, args=(source,))
+        # 启动线程
+        thread.start()
 
 
 # 入口函数
