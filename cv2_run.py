@@ -40,7 +40,7 @@ bbox_labelstr = {
 old_detectCount_map = {}  # 上一帧检测到的每个对象的数量
 
 
-def process_frame(img_bgr,model):
+def process_frame(img_bgr, model):
     '''
     处理每一帧图像
     输入摄像头画面 bgr-array，输出图像 bgr-array
@@ -56,29 +56,29 @@ def process_frame(img_bgr,model):
     # 记录该帧开始处理的时间
     start_time = time.time()
     # 只要置信度大于0.5的框
-    results = model.predict(source=img_bgr,task='detect',show=False,stream=True,device = None, verbose=False,vid_stride=1,iou=args.iou_thres,conf=args.conf_thres)
-#     source	跟之前的yolov5一致，可以输入图片路径，图片文件夹路径，视频路径
-# save	保存检测后输出的图像，默认False
-# conf	用于检测的对象置信阈值，默认0.25
-# iou	用于nms的IOU阈值，默认0.7
-# half	FP16推理，默认False
-# device	要运行的设备，即cuda设备=0/1/2/3或设备=cpu
-# show	用于推理视频过程中展示推理结果，默认False
-# save_txt	是否把识别结果保存为txt，默认False
-# save_conf	保存带有置信度分数的结果 ，默认False
-# save_crop	保存带有结果的裁剪图像，默认False
-# hide_label	保存识别的图像时候是否隐藏label ，默认False
-# hide_conf	保存识别的图像时候是否隐藏置信度，默认False
-# vid_stride	视频检测中的跳帧帧数，默认1
-# classes	展示特定类别的，根据类过滤结果，即class=0，或class=[0,2,3]
-# line_thickness	目标框中的线条粗细大小 ，默认3
-# visualize	可视化模型特征 ，默认False
-# augment	是否使用数据增强，默认False
-# agnostic_nms	是否采用class-agnostic NMS，默认False
-# retina_masks	使用高分辨率分割掩码，默认False
-# max_det	单张图最大检测目标，默认300
-# box	在分割人物中展示box信息，默认True
-
+    results = model.predict(source=img_bgr, task='detect', show=False, stream=True, device=None, verbose=False,
+                            vid_stride=1, iou=args.iou_thres, conf=args.conf_thres)
+    #     source	跟之前的yolov5一致，可以输入图片路径，图片文件夹路径，视频路径
+    # save	保存检测后输出的图像，默认False
+    # conf	用于检测的对象置信阈值，默认0.25
+    # iou	用于nms的IOU阈值，默认0.7
+    # half	FP16推理，默认False
+    # device	要运行的设备，即cuda设备=0/1/2/3或设备=cpu
+    # show	用于推理视频过程中展示推理结果，默认False
+    # save_txt	是否把识别结果保存为txt，默认False
+    # save_conf	保存带有置信度分数的结果 ，默认False
+    # save_crop	保存带有结果的裁剪图像，默认False
+    # hide_label	保存识别的图像时候是否隐藏label ，默认False
+    # hide_conf	保存识别的图像时候是否隐藏置信度，默认False
+    # vid_stride	视频检测中的跳帧帧数，默认1
+    # classes	展示特定类别的，根据类过滤结果，即class=0，或class=[0,2,3]
+    # line_thickness	目标框中的线条粗细大小 ，默认3
+    # visualize	可视化模型特征 ，默认False
+    # augment	是否使用数据增强，默认False
+    # agnostic_nms	是否采用class-agnostic NMS，默认False
+    # retina_masks	使用高分辨率分割掩码，默认False
+    # max_det	单张图最大检测目标，默认300
+    # box	在分割人物中展示box信息，默认True
 
     # results = model(img_bgr, verbose=False)  # verbose设置为False，不单独打印每一帧预测结果
 
@@ -141,16 +141,17 @@ def process_frame(img_bgr,model):
         # 字要小一号，每个对象一行
         for idx, key in enumerate(detectCount_map):
             det_string = key + ' ' + str(detectCount_map[key])
-            img_bgr = cv2.putText(img_bgr, det_string, (25, 100 + 15 * idx), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 255),
+            img_bgr = cv2.putText(img_bgr, det_string, (25, 100 + 15 * idx), cv2.FONT_HERSHEY_SIMPLEX, 0.4,
+                                  (255, 0, 255),
                                   1)
         # 输出线程号+时间戳+检测到的每个对象的数量
         logger.info("线程{}-{}-当前检测到:{},FPS:{:.2f}".format(threading.current_thread().name,
-                                                     time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()),
-                                                     str(detectCount_map), FPS)
+                                                                time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()),
+                                                                str(detectCount_map), FPS)
                     )
         print("线程{}-{}-当前检测到:{},FPS:{:.2f}".format(threading.current_thread().name,
-                                                     time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()),
-                                                     str(detectCount_map), FPS)
+                                                          time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()),
+                                                          str(detectCount_map), FPS)
               )
 
         # 检测是否异常
@@ -164,7 +165,8 @@ def process_frame(img_bgr,model):
             print('----!!!!!有异常现象---------')
             # 保存异常帧，加入时间戳
             cv2.imwrite(
-                args.abnormalFrame_saveDir + '/' + 'ABNORMAL_' + time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()) + '.jpg',
+                args.abnormalFrame_saveDir + '/' + 'ABNORMAL_' + time.strftime("%Y-%m-%d_%H-%M-%S",
+                                                                               time.localtime()) + '.jpg',
                 img_bgr)
             # 写异常,color为红色
             img_bgr = cv2.putText(img_bgr, 'ABNORMAL', (25, 140), cv2.FONT_HERSHEY_SIMPLEX, 1.25, (1, 1, 250), 2)
@@ -185,21 +187,21 @@ def run_detect(source):
     cap = cv2.VideoCapture(source)
     # 初始化flv视频写入器
     frame_size = (cap.get(cv2.CAP_PROP_FRAME_WIDTH), cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fourcc = cv2.VideoWriter_fourcc('F', 'L', 'V', '1') #该参数是Flash视频，文件名后缀为.flv
+    fourcc = cv2.VideoWriter_fourcc('F', 'L', 'V', '1')  # 该参数是Flash视频，文件名后缀为.flv
     fps = cap.get(cv2.CAP_PROP_FPS)
     # flv保存路径要再加上当前线程的名字(需要去掉空格及特殊符号，来满足文件夹名字要求）与线程开始时间
-    flv_savePath = args.flv_saveDir + '/' + threading.current_thread().name.replace(' ', '').replace(':', '-') + '-' + time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()) + '.flv'
+    flv_savePath = args.flv_saveDir + '/' + threading.current_thread().name.replace(' ', '').replace(':',
+                                                                                                     '-') + '-' + time.strftime(
+        "%Y-%m-%d_%H-%M-%S", time.localtime()) + '.flv'
     print('flv_savePath:', flv_savePath)
-    #path示例 'flvOut/out.flv'
+    # path示例 'flvOut/out.flv'
     out = cv2.VideoWriter(flv_savePath, fourcc, fps, (int(frame_size[0]), int(frame_size[1])))
 
     # fourcc = cv2.VideoWriter_fourcc(*'XVID')
     # out = cv2.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
 
-    
-    model = YOLO(model = 'IH-821-sim.onnx',task='detect')  # 加载模型
-    # 文档 https://docs.ultralytics.com/usage/cfg/
-
+    model = YOLO(model='IH-821-sim.onnx', task='detect')  # 加载模型
+    # 参数文档 https://docs.ultralytics.com/usage/cfg/
 
     # 日志显示第几号线程的摄像头是否打开成功
     if cap.isOpened():
@@ -208,38 +210,52 @@ def run_detect(source):
 
     # 定时10s后结束循环
     start_time = time.time()
+
     # 无限循环，直到break被触发
-    while cap.isOpened():
+    try:
+        while cap.isOpened():
 
-        # 获取画面
-        success, frame = cap.read()
+            # 获取画面
+            success, frame = cap.read()
 
-        if not success:  # 如果获取画面不成功，则退出
-            logger.error('获取画面不成功，退出')
-            print('获取画面不成功，退出')
-            break
+            if not success:  # 如果获取画面不成功，则退出
+                logger.error('获取画面不成功，退出')
+                print('获取画面不成功，退出')
+                break
 
-        ## 逐帧处理
-        frame = process_frame(frame,model)
-        # 写入flv视频
-        out.write(frame)
+            # 逐帧处理
+            try:
+                frame = process_frame(frame, model)
+            except Exception as error:
+                logger.error('process_frame报错！', error)
+                print('process_frame报错！', error)
 
-        # 展示处理后的三通道图像q
-        # cv2.imshow('window_' + str(threading.current_thread().name), frame)
+            # 写入flv视频
+            out.write(frame)
 
+            # 展示处理后的三通道图像q
+            cv2.imshow('window_' + str(threading.current_thread().name), frame)
 
-        # # 每隔60毫秒检测一次键盘是否有输入
-        # key_pressed = cv2.waitKey(60)  # 每隔多少毫秒毫秒，获取键盘哪个键被按下
-        # # print('键盘上被按下的键：', key_pressed)
-        #
-        # if key_pressed in [ord('q'), 27]:  # 按键盘上的q或esc退出（在英文输入法下）
-        #     break
+            # 每隔60毫秒检测一次键盘是否有输入
+            key_pressed = cv2.waitKey(60)  # 每隔多少毫秒毫秒，获取键盘哪个键被按下
+            # print('键盘上被按下的键：', key_pressed)
 
-        #发现超过10s则自动关闭
-        if time.time() - start_time > 10:
-            print('超过10s，自动关闭')
-            logger.critical('超过10s，自动关闭')
-            break
+            if key_pressed in [ord('q'), 27]:  # 按键盘上的q或esc退出（在英文输入法下）
+                break
+
+            # 使用opencv读取rtsp视频流预览的时候，发现运行越久越卡的情况。分析是内存没有释放的缘故，在循环里每帧结束后把该帧用del()删除即可
+            del success
+            del frame
+
+            # 发现超过10s则自动关闭
+            if time.time() - start_time > 50:
+                print('超过50s，自动关闭')
+                logger.critical('超过50s，自动关闭')
+                break
+
+    except Exception as error:
+        print('中途中断', error)
+        logger.error('中途中断', error)
 
     # 关闭flv视频写入器
     out.release()
@@ -247,6 +263,7 @@ def run_detect(source):
     cap.release()
     # 关闭图像窗口
     cv2.destroyAllWindows()
+
 
 def run_program():
     # 读取source.streams中的每一行作为一个线程的source作为参数，启动一个线程
@@ -288,68 +305,3 @@ if __name__ == '__main__':
     run_program()
 
 
-# 视频逐帧处理代码模板
-# 不需修改任何代码，只需定义process_frame函数即可
-# 同济子豪兄 2021-7-10
-def generate_video(input_path='videos/robot.mp4'):
-    filehead = input_path.split('/')[-1]
-    output_path = "out-" + filehead
-
-    print('视频开始处理', input_path)
-
-    # 获取视频总帧数
-    cap = cv2.VideoCapture(input_path)
-    frame_count = 0
-    while (cap.isOpened()):
-        success, frame = cap.read()
-        frame_count += 1
-        if not success:
-            break
-    cap.release()
-    print('视频总帧数为', frame_count)
-
-    # cv2.namedWindow('Crack Detection and Measurement Video Processing')
-    cap = cv2.VideoCapture(input_path)
-    frame_size = (cap.get(cv2.CAP_PROP_FRAME_WIDTH), cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    # cv2.VideoWriter_fourcc(‘F’, ‘L’, ‘V’, ‘1’), 该参数是Flash视频，文件名后缀为.flv
-
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    fps = cap.get(cv2.CAP_PROP_FPS)
-
-    out = cv2.VideoWriter(output_path, fourcc, fps, (int(frame_size[0]), int(frame_size[1])))
-
-    # 进度条绑定视频总帧数
-    with tqdm(total=frame_count - 1) as pbar:
-        try:
-            while (cap.isOpened()):
-                success, frame = cap.read()
-                if not success:
-                    break
-
-                # 处理帧
-                # frame_path = './temp_frame.png'
-                # cv2.imwrite(frame_path, frame)
-                try:
-                    frame = process_frame(frame)
-                except Exception as error:
-                    print('报错！', error)
-                    pass
-
-                if success == True:
-                    # cv2.imshow('Video Processing', frame)
-                    out.write(frame)
-
-                    # 进度条更新一帧
-                    pbar.update(1)
-
-                # if cv2.waitKey(1) & 0xFF == ord('q'):
-                # break
-        except:
-            print('中途中断')
-            pass
-
-    cv2.destroyAllWindows()
-    out.release()
-    cap.release()
-    print('视频已保存', output_path)
