@@ -16,7 +16,7 @@ from tqdm import tqdm
 from ultralytics import YOLO
 
 import matplotlib.pyplot as plt
-
+import MyVideoScreenshot
 import logging
 
 # 配置日志
@@ -36,6 +36,7 @@ bbox_labelstr = {
     'offset_x': 0,  # X 方向，文字偏移距离，向右为正
     'offset_y': -10,  # Y 方向，文字偏移距离，向下为正
 }
+
 
 old_detectCount_map = {}  # 上一帧检测到的每个对象的数量
 
@@ -184,11 +185,12 @@ def run_detect(source):
     Returns:
     '''
     # 获取摄像头，传入0表示获取系统默认摄像头
-    cap = cv2.VideoCapture(source)
+    # cap = cv2.VideoCapture(source)
+    my_cap = MyVideoScreenshot.MyVideoCapture(source)
     # 初始化flv视频写入器
-    frame_size = (cap.get(cv2.CAP_PROP_FRAME_WIDTH), cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    frame_size = (my_cap.get_frame_width(), my_cap.get_frame_height())
     fourcc = cv2.VideoWriter_fourcc('F', 'L', 'V', '1')  # 该参数是Flash视频，文件名后缀为.flv
-    fps = cap.get(cv2.CAP_PROP_FPS)
+    fps = my_cap.get_fps()
     # flv保存路径要再加上当前线程的名字(需要去掉空格及特殊符号，来满足文件夹名字要求）与线程开始时间
     flv_savePath = args.flv_saveDir + '/' + threading.current_thread().name.replace(' ', '').replace(':',
                                                                                                      '-') + '-' + time.strftime(
@@ -204,7 +206,7 @@ def run_detect(source):
     # 参数文档 https://docs.ultralytics.com/usage/cfg/
 
     # 日志显示第几号线程的摄像头是否打开成功
-    if cap.isOpened():
+    if my_cap.isOpened():
         logger.info('线程{}的摄像头打开成功,source={}'.format(threading.current_thread().name, source))
         print('线程{}的摄像头打开成功,source={}'.format(threading.current_thread().name, source))
 
@@ -213,15 +215,16 @@ def run_detect(source):
 
     # 无限循环，直到break被触发
     try:
-        while cap.isOpened():
+        while my_cap.isOpened():
 
             # 获取画面
-            success, frame = cap.read()
+            status, frame = my_cap.read()
 
-            if not success:  # 如果获取画面不成功，则退出
-                logger.error('获取画面不成功，退出')
-                print('获取画面不成功，退出')
-                break
+            if not status:  # 如果获取画面不成功，则退出
+                logger.error('status is false,need waiting')
+                print('status is false,need waiting')
+                time.sleep(1)
+                continue
 
             # 逐帧处理
             try:
@@ -244,14 +247,14 @@ def run_detect(source):
                 break
 
             # 使用opencv读取rtsp视频流预览的时候，发现运行越久越卡的情况。分析是内存没有释放的缘故，在循环里每帧结束后把该帧用del()删除即可
-            del success
+            del status
             del frame
 
-            # 发现超过10s则自动关闭
-            if time.time() - start_time > 50:
-                print('超过50s，自动关闭')
-                logger.critical('超过50s，自动关闭')
-                break
+            # # 发现超过10s则自动关闭
+            # if time.time() - start_time > 50:
+            #     print('超过50s，自动关闭')
+            #     logger.critical('超过50s，自动关闭')
+            #     break
 
     except Exception as error:
         print('中途中断', error)
@@ -260,7 +263,7 @@ def run_detect(source):
     # 关闭flv视频写入器
     out.release()
     # 关闭摄像头
-    cap.release()
+    my_cap.release()
     # 关闭图像窗口
     cv2.destroyAllWindows()
 
