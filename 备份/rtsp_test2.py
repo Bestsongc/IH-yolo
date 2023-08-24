@@ -1,8 +1,6 @@
 from threading import Thread
-import cv2
-import time
 
-from ultralytics import YOLO
+import cv2
 
 
 class VideoScreenshot(object):

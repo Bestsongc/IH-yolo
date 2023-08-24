@@ -2,22 +2,16 @@
 # 不需修改任何代码，只需修改process_frame函数即可
 # 同济子豪兄 2021-7-8
 import argparse
+import logging
 import threading
-
-# 导入opencv-python
-
-import cv2
-import numpy as np
 import time
 
+import cv2
 import torch
-from tqdm import tqdm
 
 from ultralytics import YOLO
 
-import matplotlib.pyplot as plt
-import MyVideoScreenshot
-import logging
+# 导入opencv-python
 
 # 配置日志
 logging.basicConfig(filename='IH-detect.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -37,9 +31,8 @@ bbox_labelstr = {
     'offset_y': -10,  # Y 方向，文字偏移距离，向下为正
 }
 
-
 old_detectCount_map = {}  # 上一帧检测到的每个对象的数量
-
+import IH_VideoCapture
 
 def process_frame(img_bgr, model):
     '''
@@ -186,17 +179,20 @@ def run_detect(source):
     '''
     # 获取摄像头，传入0表示获取系统默认摄像头
     # cap = cv2.VideoCapture(source)
-    my_cap = MyVideoScreenshot.MyVideoCapture(source)
+
+    my_cap = IH_VideoCapture.MyVideoCapture(source)
+    my_cap.set
     # 初始化flv视频写入器
     frame_size = (my_cap.get_frame_width(), my_cap.get_frame_height())
     fourcc = cv2.VideoWriter_fourcc('F', 'L', 'V', '1')  # 该参数是Flash视频，文件名后缀为.flv
-    fps = my_cap.get_fps()
+    fps = my_cap.get_fps() # FPS默认为rtsp视频的FPS
     # flv保存路径要再加上当前线程的名字(需要去掉空格及特殊符号，来满足文件夹名字要求）与线程开始时间
     flv_savePath = args.flv_saveDir + '/' + threading.current_thread().name.replace(' ', '').replace(':',
                                                                                                      '-') + '-' + time.strftime(
         "%Y-%m-%d_%H-%M-%S", time.localtime()) + '.flv'
     print('flv_savePath:', flv_savePath)
     # path示例 'flvOut/out.flv'
+
     out = cv2.VideoWriter(flv_savePath, fourcc, fps, (int(frame_size[0]), int(frame_size[1])))
 
     # fourcc = cv2.VideoWriter_fourcc(*'XVID')
@@ -250,11 +246,11 @@ def run_detect(source):
             del status
             del frame
 
-            # # 发现超过10s则自动关闭
-            # if time.time() - start_time > 50:
-            #     print('超过50s，自动关闭')
-            #     logger.critical('超过50s，自动关闭')
-            #     break
+            # 发现超过30s则自动关闭
+            if time.time() - start_time > args.auto_close_time:
+                print('超过30s，自动关闭')
+                logger.critical('超过30s，自动关闭')
+                break
 
     except Exception as error:
         print('中途中断', error)
@@ -298,6 +294,7 @@ if __name__ == '__main__':
     parser.add_argument('--source', type=str, default='source.streams', help='source.streams path')
     parser.add_argument('--abnormalFrame_saveDir', type=str, default="abnormalFrame", help='异常帧保存路径')
     parser.add_argument('--flv_saveDir', type=str, default="flvOut", help='flv视频保存路径')
+    parser.add_argument('--auto_close_time', type=int, default=30, help='超过多少秒自动关闭并保存视频')
     args = parser.parse_args()
 
     # 有 GPU 就用 GPU，没有就用 CPU

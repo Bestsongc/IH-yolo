@@ -14,7 +14,6 @@ from ultralytics.data.loaders import (LOADERS, LoadImages, LoadPilAndNumpy, Load
 from ultralytics.data.utils import IMG_FORMATS, VID_FORMATS
 from ultralytics.utils import RANK, colorstr
 from ultralytics.utils.checks import check_file
-
 from .dataset import YOLODataset
 from .utils import PIN_MEMORY
 

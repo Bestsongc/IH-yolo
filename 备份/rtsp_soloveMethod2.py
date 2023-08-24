@@ -1,8 +1,8 @@
-from threading import Thread
-import cv2
 import time
+from threading import Thread
+
+import cv2
 from mmtrack.apis import inference_mot, init_model  # 导入mmtrack进行目标跟踪
-from torchvision import transforms
 
 
 class VideoScreenshot(object):

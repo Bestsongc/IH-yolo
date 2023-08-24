@@ -6,9 +6,7 @@
 import threading
 
 from ultralytics import YOLO
-from PIL import Image
-import cv2
-from ultralytics.utils import LINUX, ONLINE, ROOT, SETTINGS
+
 
 # MODEL = Path(SETTINGS['weights_dir']) / 'path with spaces' / 'yolov8n.pt'  # test spaces in path
 # CFG = 'yolov8n.yaml'
@@ -17,7 +15,7 @@ from ultralytics.utils import LINUX, ONLINE, ROOT, SETTINGS
 # SOURCE_RGBA = Path(f'{SOURCE.parent / SOURCE.stem}_4ch.png')
 
 def run(source):
-    model = YOLO("IH-821-sim.onnx")
+    model = YOLO("IH821.engine")
     results = model.predict(task='detect',source=source, show=True,stream=True,device = None,save =True)
     # device	None or str	None	运行的设备，即 cuda device=0/1/2/3 或 device=cpu
     # classes	None or list	None	按类别过滤结果，即classes=0，或classes=[0,2,3]

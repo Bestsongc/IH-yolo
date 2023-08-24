@@ -1,6 +1,6 @@
-import cv2
 import threading
-import sys
+
+import cv2
 
 
 class RTSCapture(cv2.VideoCapture):

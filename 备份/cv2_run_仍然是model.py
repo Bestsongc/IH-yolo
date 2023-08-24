@@ -1,22 +1,17 @@
 # 调用摄像头逐帧实时处理模板
 # 不需修改任何代码，只需修改process_frame函数即可
 # 同济子豪兄 2021-7-8
+import logging
 import threading
-
-# 导入opencv-python
-
-import cv2
-import numpy as np
 import time
 
+import cv2
 import torch
 from tqdm import tqdm
 
 from ultralytics import YOLO
 
-import matplotlib.pyplot as plt
-
-import logging
+# 导入opencv-python
 
 # 配置日志
 logging.basicConfig(filename='../IH-detect.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
