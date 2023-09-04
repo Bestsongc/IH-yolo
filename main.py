@@ -32,8 +32,6 @@ bbox_labelstr = {
 old_detectCount_map = {}  # 上一帧检测到的每个对象的数量
 import IH_VideoCapture
 
-# yolo推理的视频FPS
-yolo_FPS = 30
 def verify_args():
     '''
     验证参数
@@ -186,7 +184,7 @@ def process_frame(img_bgr, model):
         old_detectCount_map.clear()
         old_detectCount_map.update(detectCount_map)
 
-    return img_bgr
+    return img_bgr,yolo_FPS
 
 
 def run_detect(source):
@@ -203,8 +201,8 @@ def run_detect(source):
     frame_size = (my_cap.get_frame_width(), my_cap.get_frame_height())
     fourcc = cv2.VideoWriter_fourcc('F', 'L', 'V', '1')  # 该参数是Flash视频，文件名后缀为.flv
 
-    # fps = my_cap.get_fps() # FPS默认为rtsp视频的FPS
-    fps = yolo_FPS
+    fps = my_cap.get_fps() # FPS默认为rtsp视频的FPS
+
     # flv保存路径要再加上当前线程的名字(需要去掉空格及特殊符号，来满足文件夹名字要求）与线程开始时间
     flv_savePath = args.flv_saveDir + '/' + threading.current_thread().name.replace(' ', '').replace(':',
                                                                                                      '-') + '-' + time.strftime(
@@ -212,7 +210,7 @@ def run_detect(source):
     print('flv_savePath:', flv_savePath)
     # path示例 'flvOut/out.flv'
 
-    out = cv2.VideoWriter(flv_savePath, fourcc, yolo_FPS, (int(frame_size[0]), int(frame_size[1])))
+    out = cv2.VideoWriter(flv_savePath, fourcc, fps, (int(frame_size[0]), int(frame_size[1])))
 
     # fourcc = cv2.VideoWriter_fourcc(*'XVID')
     # out = cv2.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
@@ -225,9 +223,9 @@ def run_detect(source):
         logger.info('线程{}的摄像头打开成功,source={}'.format(threading.current_thread().name, source))
         print('线程{}的摄像头打开成功,source={}'.format(threading.current_thread().name, source))
 
-    # 定时10s后结束循环
     start_time = time.time()
-
+    last_time = time.time()
+    yolo_FPS = 30 #默认为30
     # 无限循环，直到break被触发
     try:
         while my_cap.isOpened():
@@ -243,7 +241,7 @@ def run_detect(source):
 
             # 逐帧处理
             try:
-                frame = process_frame(frame, model)
+                frame,yolo_FPS = process_frame(frame, model)
             except Exception as error:
                 logger.error('process_frame报错！', error)
                 print('process_frame报错！', error)
@@ -264,6 +262,13 @@ def run_detect(source):
             # 使用opencv读取rtsp视频流预览的时候，发现运行越久越卡的情况。分析是内存没有释放的缘故，在循环里每帧结束后把该帧用del()删除即可
             del status
             del frame
+
+            # TODO:实时修改flv视频的FPS
+            # # 每隔5s修改一次
+            # if time.time() - last_time > 5:
+            #     print('修改flv视频的FPS为yolo_FPS:', yolo_FPS)
+            #     out.set(cv2.CAP_PROP_FPS, yolo_FPS)
+            #     last_time = time.time()
 
             # 发现超过30s则自动关闭
             if time.time() - start_time > args.auto_close_time:
