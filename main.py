@@ -3,7 +3,7 @@ import argparse
 import logging
 import threading
 import time
-
+import subprocess as sp
 import cv2
 import torch
 
@@ -32,6 +32,7 @@ bbox_labelstr = {
 old_detectCount_map = {}  # 上一帧检测到的每个对象的数量
 import IH_VideoCapture
 
+yolo_FPS = 8 #默认为15
 def verify_args():
     '''
     验证参数
@@ -63,6 +64,7 @@ def process_frame(img_bgr, model):
     '''
 
     # 记录该帧开始处理的时间
+    global yolo_FPS
     start_time = time.time()
     # 只要置信度大于0.5的框
     results = model.predict(source=img_bgr, task='detect', show=False, stream=True, device=None, verbose=False,
@@ -184,7 +186,7 @@ def process_frame(img_bgr, model):
         old_detectCount_map.clear()
         old_detectCount_map.update(detectCount_map)
 
-    return img_bgr,yolo_FPS
+    return img_bgr
 
 
 def run_detect(source):
@@ -200,8 +202,8 @@ def run_detect(source):
     # 初始化flv视频写入器
     frame_size = (my_cap.get_frame_width(), my_cap.get_frame_height())
     fourcc = cv2.VideoWriter_fourcc('F', 'L', 'V', '1')  # 该参数是Flash视频，文件名后缀为.flv
-
-    fps = my_cap.get_fps() # FPS默认为rtsp视频的FPS
+    global yolo_FPS
+    fps = yolo_FPS
 
     # flv保存路径要再加上当前线程的名字(需要去掉空格及特殊符号，来满足文件夹名字要求）与线程开始时间
     flv_savePath = args.flv_saveDir + '/' + threading.current_thread().name.replace(' ', '').replace(':',
@@ -215,6 +217,23 @@ def run_detect(source):
     # fourcc = cv2.VideoWriter_fourcc(*'XVID')
     # out = cv2.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
 
+
+    # ffmpeg command
+    command = ['ffmpeg',
+               '-y',
+               '-f', 'rawvideo',
+               '-vcodec', 'rawvideo',
+               '-pix_fmt', 'bgr24',
+               '-s', "{}x{}".format(my_cap.get_frame_width(), my_cap.get_frame_height()),
+               '-r', str(fps),
+               '-i', '-',
+               '-c:v', 'libx264',
+               '-pix_fmt', 'yuv420p',
+               '-preset', 'ultrafast',
+               '-f', 'flv',
+               args.rtmp_url]
+    pipe_ffmpeg = sp.Popen(command, stdin=sp.PIPE) # stdin=sp.PIPE表示将视频流作为管道输入
+
     model = YOLO(model='IH-821-sim.onnx', task='detect')  # 加载模型
     # 参数文档 https://docs.ultralytics.com/usage/cfg/
 
@@ -225,11 +244,11 @@ def run_detect(source):
 
     start_time = time.time()
     last_time = time.time()
-    yolo_FPS = 30 #默认为30
+
+
     # 无限循环，直到break被触发
     try:
         while my_cap.isOpened():
-
             # 获取画面
             status, frame = my_cap.read()
 
@@ -241,23 +260,26 @@ def run_detect(source):
 
             # 逐帧处理
             try:
-                frame,yolo_FPS = process_frame(frame, model)
+                frame= process_frame(frame, model)
             except Exception as error:
                 logger.error('process_frame报错！', error)
                 print('process_frame报错！', error)
 
-            # 写入flv视频
-            out.write(frame)
+            # # 写入flv作为本地视频
+            # out.write(frame)
 
-            # 展示处理后的三通道图像q
-            cv2.imshow('window_' + str(threading.current_thread().name), frame)
+            # 推流，rtmp流
+            pipe_ffmpeg.stdin.write(frame.tobytes())
 
-            # 每隔60毫秒检测一次键盘是否有输入
-            key_pressed = cv2.waitKey(60)  # 每隔多少毫秒毫秒，获取键盘哪个键被按下
-            # print('键盘上被按下的键：', key_pressed)
+            # # 展示处理后的三通道图像q
+            # cv2.imshow('window_' + str(threading.current_thread().name), frame)
 
-            if key_pressed in [ord('q'), 27]:  # 按键盘上的q或esc退出（在英文输入法下）
-                break
+            # # 每隔60毫秒检测一次键盘是否有输入
+            # key_pressed = cv2.waitKey(60)  # 每隔多少毫秒毫秒，获取键盘哪个键被按下
+            # # print('键盘上被按下的键：', key_pressed)
+            #
+            # if key_pressed in [ord('q'), 27]:  # 按键盘上的q或esc退出（在英文输入法下）
+            #     break
 
             # 使用opencv读取rtsp视频流预览的时候，发现运行越久越卡的情况。分析是内存没有释放的缘故，在循环里每帧结束后把该帧用del()删除即可
             del status
@@ -270,15 +292,16 @@ def run_detect(source):
             #     out.set(cv2.CAP_PROP_FPS, yolo_FPS)
             #     last_time = time.time()
 
-            # 发现超过30s则自动关闭
-            if time.time() - start_time > args.auto_close_time:
-                print('超过30s，自动关闭')
-                logger.critical('超过30s，自动关闭')
-                break
+            if args.auto_close_time != -1: # 如果设置了自动关闭
+                # 发现超过30s则自动关闭
+                if time.time() - start_time > args.auto_close_time:
+                    print('超过30s，自动关闭')
+                    logger.critical('超过30s，自动关闭')
+                    break
 
     except Exception as error:
-        print('中途中断', error)
-        logger.error('中途中断', error)
+        print('中途中断 %s', str(error))
+        logger.error('中途中断:%s', str(error))
 
     # 关闭flv视频写入器
     out.release()
@@ -322,7 +345,8 @@ if __name__ == '__main__':
     parser.add_argument('--source', type=str, default=0, help='source.streams path Or 0 代表摄像头')
     parser.add_argument('--abnormalFrame_saveDir', type=str, default="abnormalFrame", help='异常帧保存路径')
     parser.add_argument('--flv_saveDir', type=str, default="flvOut", help='flv视频保存路径')
-    parser.add_argument('--auto_close_time', type=int, default=30, help='超过多少秒自动关闭并保存视频')
+    parser.add_argument('--auto_close_time', type=int, default=-1, help='默认关闭（-1），超过多少秒自动关闭并保存视频')
+    parser.add_argument('--rtmp_url', type=str, default="rtmp://localhost/live/livestream", help='推流的流媒体服务器的地址')
     args = parser.parse_args()
     verify_args()
     # 有 GPU 就用 GPU，没有就用 CPU
