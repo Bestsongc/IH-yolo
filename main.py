@@ -200,11 +200,14 @@ def run_detect(source):
     my_cap = IH_VideoCapture.MyVideoCapture(source)
 
     # 初始化flv视频写入器
-    frame_size = (my_cap.get_frame_width(), my_cap.get_frame_height())
+    frame_width = int(my_cap.get_frame_width())
+    frame_height = int(my_cap.get_frame_height())
     fourcc = cv2.VideoWriter_fourcc('F', 'L', 'V', '1')  # 该参数是Flash视频，文件名后缀为.flv
     global yolo_FPS
     fps = yolo_FPS
-
+    print('fps:'+str(fps))
+    print('frame_width:'+str(frame_width))
+    print('frame_height:'+str(frame_height))
     # flv保存路径要再加上当前线程的名字(需要去掉空格及特殊符号，来满足文件夹名字要求）与线程开始时间
     flv_savePath = args.flv_saveDir + '/' + threading.current_thread().name.replace(' ', '').replace(':',
                                                                                                      '-') + '-' + time.strftime(
@@ -212,7 +215,7 @@ def run_detect(source):
     print('flv_savePath:', flv_savePath)
     # path示例 'flvOut/out.flv'
 
-    out = cv2.VideoWriter(flv_savePath, fourcc, fps, (int(frame_size[0]), int(frame_size[1])))
+    out = cv2.VideoWriter(flv_savePath, fourcc, fps, (frame_width, frame_height))
 
     # fourcc = cv2.VideoWriter_fourcc(*'XVID')
     # out = cv2.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
@@ -224,7 +227,7 @@ def run_detect(source):
                '-f', 'rawvideo',
                '-vcodec', 'rawvideo',
                '-pix_fmt', 'bgr24',
-               '-s', "{}x{}".format(my_cap.get_frame_width(), my_cap.get_frame_height()),
+               '-s', "{}x{}".format(frame_width, frame_height),
                '-r', str(fps),
                '-i', '-',
                '-c:v', 'libx264',
@@ -309,7 +312,8 @@ def run_detect(source):
     my_cap.release()
     # 关闭图像窗口
     cv2.destroyAllWindows()
-
+    # 关闭ffmpeg
+    pipe_ffmpeg.terminate()
 
 def run_program():
     # 读取source.streams中的每一行作为一个线程的source作为参数，启动一个线程
