@@ -6,10 +6,19 @@
 
 
 # 基础镜像
+
 FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
 
+# 换源先
+#RUN  sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
+RUN sed -i 's/http:\/\/archive.ubuntu.com\/ubuntu\//http:\/\/mirrors.aliyun.com\/ubuntu\//' /etc/apt/sources.list && \
+    sed -i 's/http:\/\/security.ubuntu.com\/ubuntu\//http:\/\/mirrors.aliyun.com\/ubuntu\//' /etc/apt/sources.list
 
-RUN pip install --no-cache nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com
+RUN  apt-get clean
+# 展示当前源
+RUN cat /etc/apt/sources.list
+
+RUN pip install  nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com
 
 # Downloads to user config dir
 ADD https://ultralytics.com/assets/Arial.ttf https://ultralytics.com/assets/Arial.Unicode.ttf /root/.config/Ultralytics/
@@ -36,22 +45,42 @@ ADD  ultralytics /usr/src/ultralytics
 
 # Install pip packages
 RUN python3 -m pip install --upgrade pip wheel
-RUN pip install --no-cache -e ".[export]" thop albumentations comet pycocotools
+# 它们是各种库或工具，用于不同的任务，例如图像增强、性能测量等
+RUN pip install  -e ".[export]" thop albumentations comet pycocotools
 
 
 # Requires <= Python 3.10, bug with paddlepaddle==2.5.0
-RUN pip install --no-cache paddlepaddle==2.4.2 x2paddle
+RUN pip install - paddlepaddle==2.4.2 x2paddle
 # Fix error: `np.bool` was a deprecated alias for the builtin `bool`
-RUN pip install --no-cache numpy==1.23.5
+RUN pip install  numpy==1.23.5
 # Remove exported models
 RUN rm -rf tmp
 
-
+#CD 到对应目录
+# pip requirements
+RUN pip install --no-cache -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 
 # Set environment variables
 ENV OMP_NUM_THREADS=1
 # Avoid DDP error "MKL_THREADING_LAYER=INTEL is incompatible with libgomp.so.1 library" https://github.com/pytorch/pytorch/issues/37377
 ENV MKL_THREADING_LAYER=GNU
+
+#ENV中加入main.py的参数
+#模型名称
+ENV MODEL = "IH-821-sim.onnx"
+# 置信度
+ENV CONF_THRES = 0.5
+# nms阈值
+ENV IOU_THRES = 0.7
+# 输入源
+ENV INPUT_SOURCE = 0
+# 保存异常帧的路径
+ENV ABNORMALFRAME_SAVEDIR = "abnormalFrame"
+# 保存flv的路径
+ENV FLV_SAVEDIR = "FlvOut"
+# 自动关闭时间
+ENV AUTO_CLOSE_TIME = -1
+ENV RTMP_URL = "rtmp://localhost/live/livestream"
 
 
 
@@ -62,13 +91,17 @@ ENV MKL_THREADING_LAYER=GNU
 
 # Build and Push
 # t=ultralytics/ultralytics:latest && sudo docker build -f docker/Dockerfile -t $t . && sudo docker push $t
-# run
-#    ENV FLASK_APP=hello
-#    EXPOSE 8000
-#    CMD flask run --host 0.0.0.0 --port 8000
-
-# CMD默认执行
- CMD ["python", "main.py"]
+ENTRYPOINT ["python main.py"]
+# CMD 会在docker run之后默认执行
+# main.py之后接入ENV参数
+CMD ["--MODEL", "$MODEL",
+"--CONF_THRES", "$CONF_THRES",
+"--IOU_THRES", "$IOU_THRES",
+"--INPUT_SOURCE", "$INPUT_SOURCE",
+"--ABNORMALFRAME_SAVEDIR", "$ABNORMALFRAME_SAVEDIR",
+"--FLV_SAVEDIR", "$FLV_SAVEDIR",
+"--AUTO_CLOSE_TIME","$AUTO_CLOSE_TIME",
+"--RTMP_URL", "$RTMP_URL"]
 
 # Pull and Run
 # t=ultralytics/ultralytics:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all $t   MY-IH-APP python main.py --source 'rtsp://admin:admin@192.168.3.111:8554/live'

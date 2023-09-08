@@ -32,22 +32,22 @@ bbox_labelstr = {
 old_detectCount_map = {}  # 上一帧检测到的每个对象的数量
 import IH_VideoCapture
 
-yolo_FPS = 8 #默认为15
+yolo_FPS = 10 #默认为15
 def verify_args():
     '''
     验证参数
     Returns:
 
     '''
-    if args.source == '0':
+    if args.INPUT_SOURCE == '0':
         print("--source输入的'0'，已改为0,->摄像头")
 
-    if not (0 < args.conf_thres <= 1):
-        print("--conf_thres 请输入0~1的数！")
+    if not (0 < args.CONF_THRES <= 1):
+        print("--CONF_THRES 请输入0~1的数！")
         exit(0)
 
-    if not (0 < args.iou_thres <= 1):
-        print("--iou_thres 请输入0~1的数！")
+    if not (0 < args.IOU_THRES <= 1):
+        print("--IOU_THRES 请输入0~1的数！")
         exit(0)
 
 def process_frame(img_bgr, model):
@@ -57,7 +57,7 @@ def process_frame(img_bgr, model):
     Args:
         img_bgr ():
         model (): YOLO模型
-        abnormalFrame_saveDir (): 异常帧保存路径
+        ABNORMALFRAME_SAVEDIR (): 异常帧保存路径
 
     Returns:
         处理后的一帧
@@ -68,7 +68,7 @@ def process_frame(img_bgr, model):
     start_time = time.time()
     # 只要置信度大于0.5的框
     results = model.predict(source=img_bgr, task='detect', show=False, stream=True, device=None, verbose=False,
-                            vid_stride=1, iou=args.iou_thres, conf=args.conf_thres)
+                            vid_stride=1, iou=args.IOU_THRES, conf=args.CONF_THRES)
     #     source	跟之前的yolov5一致，可以输入图片路径，图片文件夹路径，视频路径
     # save	保存检测后输出的图像，默认False
     # conf	用于检测的对象置信阈值，默认0.25
@@ -176,7 +176,7 @@ def process_frame(img_bgr, model):
             print('----!!!!!有异常现象---------')
             # 保存异常帧，加入时间戳
             cv2.imwrite(
-                args.abnormalFrame_saveDir + '/' + 'ABNORMAL_' + time.strftime("%Y-%m-%d_%H-%M-%S",
+                args.ABNORMALFRAME_SAVEDIR + '/' + 'ABNORMAL_' + time.strftime("%Y-%m-%d_%H-%M-%S",
                                                                                time.localtime()) + '.jpg',
                 img_bgr)
             # 写异常,color为红色
@@ -209,7 +209,7 @@ def run_detect(source):
     print('frame_width:'+str(frame_width))
     print('frame_height:'+str(frame_height))
     # flv保存路径要再加上当前线程的名字(需要去掉空格及特殊符号，来满足文件夹名字要求）与线程开始时间
-    flv_savePath = args.flv_saveDir + '/' + threading.current_thread().name.replace(' ', '').replace(':',
+    flv_savePath = args.FLV_SAVEDIR + '/' + threading.current_thread().name.replace(' ', '').replace(':',
                                                                                                      '-') + '-' + time.strftime(
         "%Y-%m-%d_%H-%M-%S", time.localtime()) + '.flv'
     print('flv_savePath:', flv_savePath)
@@ -234,10 +234,10 @@ def run_detect(source):
                '-pix_fmt', 'yuv420p',
                '-preset', 'ultrafast',
                '-f', 'flv',
-               args.rtmp_url]
+               args.RTMP_URL]
     pipe_ffmpeg = sp.Popen(command, stdin=sp.PIPE) # stdin=sp.PIPE表示将视频流作为管道输入
 
-    model = YOLO(model='IH-821-sim.onnx', task='detect')  # 加载模型
+    model = YOLO(model=args.MODEL, task='detect')  # 加载模型
     # 参数文档 https://docs.ultralytics.com/usage/cfg/
 
     # 日志显示第几号线程的摄像头是否打开成功
@@ -295,9 +295,9 @@ def run_detect(source):
             #     out.set(cv2.CAP_PROP_FPS, yolo_FPS)
             #     last_time = time.time()
 
-            if args.auto_close_time != -1: # 如果设置了自动关闭
+            if args.AUTO_CLOSE_TIME != -1: # 如果设置了自动关闭
                 # 发现超过30s则自动关闭
-                if time.time() - start_time > args.auto_close_time:
+                if time.time() - start_time > args.AUTO_CLOSE_TIME:
                     print('超过30s，自动关闭')
                     logger.critical('超过30s，自动关闭')
                     break
@@ -317,13 +317,13 @@ def run_detect(source):
 
 def run_program():
     # 读取source.streams中的每一行作为一个线程的source作为参数，启动一个线程
-    if args.source == 0:
+    if args.INPUT_SOURCE == 0:
         # 摄像头
         run_detect(0)
         return
 
     # 否则是文件中的rtsp地址作为流
-    with open(args.source, 'r') as f:
+    with open(args.INPUT_SOURCE, 'r') as f:
         sources = f.readlines()
     # 去掉每行末尾的换行符
     sources = [x.strip() for x in sources]
@@ -343,16 +343,20 @@ def run_program():
 if __name__ == '__main__':
     # 初始化
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default='IH-821-sim.onnx', help='Input your ONNX model.')
-    parser.add_argument('--conf_thres', type=float, default=0.5, help='Confidence threshold')
-    parser.add_argument('--iou_thres', type=float, default=0.7, help='NMS IoU threshold')
-    parser.add_argument('--source', type=str, default=0, help='source.streams path Or 0 代表摄像头')
-    parser.add_argument('--abnormalFrame_saveDir', type=str, default="abnormalFrame", help='异常帧保存路径')
-    parser.add_argument('--flv_saveDir', type=str, default="flvOut", help='flv视频保存路径')
-    parser.add_argument('--auto_close_time', type=int, default=-1, help='默认关闭（-1），超过多少秒自动关闭并保存视频')
-    parser.add_argument('--rtmp_url', type=str, default="rtmp://localhost/live/livestream", help='推流的流媒体服务器的地址')
+    parser.add_argument('--MODEL', type=str, default='IH-821-sim.onnx', help='Input your YOLOv8 model.支持ONNX，.pt,.engine')
+    parser.add_argument('--CONF_THRES', type=float, default=0.5, help='Confidence threshold')
+    parser.add_argument('--IOU_THRES', type=float, default=0.7, help='NMS IoU threshold')
+    parser.add_argument('--INPUT_SOURCE', type=str, default=0, help='输入的 source.streams path Or 0 代表摄像头')
+    parser.add_argument('--ABNORMALFRAME_SAVEDIR', type=str, default="abnormalFrame", help='异常帧保存路径')
+    parser.add_argument('--FLV_SAVEDIR', type=str, default="FlvOut", help='默认关闭(CLOSE), flv视频保存路径')
+    parser.add_argument('--AUTO_CLOSE_TIME', type=int, default=-1, help='默认关闭（-1），超过多少秒自动关闭并保存视频')
+    parser.add_argument('--RTMP_URL', type=str, default="rtmp://localhost/live/livestream", help='推流的流媒体服务器的地址')
     args = parser.parse_args()
     verify_args()
+    # 将参数打印到日志与控制台
+    print(args)
+    logger.info(args)
+
     # 有 GPU 就用 GPU，没有就用 CPU
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     logger.info('device:{}'.format(device))
