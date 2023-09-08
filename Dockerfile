@@ -15,18 +15,27 @@ WORKDIR /usr/src/ultralytics
 # Copy contents
 # COPY . /usr/src/app  (issues as not a .git directory)
 # 把本地的文件夹加入到当前容器的 /usr/src/ultralytics
-ADD  ultralytics /usr/src/ultralytics
+ADD .  /usr/src/ultralytics
 
+# 打印当前目录
+RUN pwd
+RUN ls -a
 # 换源先
 #RUN  sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
-RUN sed -i 's/http:\/\/archive.ubuntu.com\/ubuntu\//http:\/\/mirrors.aliyun.com\/ubuntu\//' /etc/apt/sources.list && \
-    sed -i 's/http:\/\/security.ubuntu.com\/ubuntu\//http:\/\/mirrors.aliyun.com\/ubuntu\//' /etc/apt/sources.list
 
-RUN  apt-get clean
+# pip换源
+RUN pip install -U pip
+RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/
+RUN pip config set install.trusted-host mirrors.aliyun.com
+
+# docker换源
+RUN sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
+RUN sed -i s@/security.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
+RUN apt-get clean
+RUN apt-get update
 # 展示当前源
 RUN cat /etc/apt/sources.list
 
-# TODO这里不知道能不能换源
 RUN pip install  nvidia-tensorrt
 
 # Downloads to user config dir
@@ -55,7 +64,7 @@ RUN pip install  -e ".[export]" thop albumentations comet pycocotools
 
 
 # Requires <= Python 3.10, bug with paddlepaddle==2.5.0
-RUN pip install - paddlepaddle==2.4.2 x2paddle
+RUN pip install  paddlepaddle==2.4.2 x2paddle
 # Fix error: `np.bool` was a deprecated alias for the builtin `bool`
 RUN pip install  numpy==1.23.5
 # Remove exported models
@@ -63,6 +72,7 @@ RUN rm -rf tmp
 
 #CD 到对应目录
 # pip requirements
+#TODO 或许setup.py就可以了
 RUN pip install --no-cache -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 
 # Set environment variables
