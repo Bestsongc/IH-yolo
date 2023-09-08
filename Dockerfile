@@ -9,6 +9,14 @@
 
 FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
 
+# Create working directory
+WORKDIR /usr/src/ultralytics
+
+# Copy contents
+# COPY . /usr/src/app  (issues as not a .git directory)
+# 把本地的文件夹加入到当前容器的 /usr/src/ultralytics
+ADD  ultralytics /usr/src/ultralytics
+
 # 换源先
 #RUN  sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
 RUN sed -i 's/http:\/\/archive.ubuntu.com\/ubuntu\//http:\/\/mirrors.aliyun.com\/ubuntu\//' /etc/apt/sources.list && \
@@ -18,7 +26,8 @@ RUN  apt-get clean
 # 展示当前源
 RUN cat /etc/apt/sources.list
 
-RUN pip install  nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com
+# TODO这里不知道能不能换源
+RUN pip install  nvidia-tensorrt
 
 # Downloads to user config dir
 ADD https://ultralytics.com/assets/Arial.ttf https://ultralytics.com/assets/Arial.Unicode.ttf /root/.config/Ultralytics/
@@ -33,15 +42,11 @@ RUN apt update \
 # https://security.snyk.io/vuln/SNYK-UBUNTU1804-OPENSSL-3314796
 RUN apt upgrade --no-install-recommends -y openssl tar
 
-# Create working directory
-WORKDIR /usr/src/ultralytics
 
 
 
-# Copy contents
-# COPY . /usr/src/app  (issues as not a .git directory)
-# 把本地的文件夹加入到当前容器的 /usr/src/ultralytics
-ADD  ultralytics /usr/src/ultralytics
+
+
 
 # Install pip packages
 RUN python3 -m pip install --upgrade pip wheel
@@ -94,14 +99,7 @@ ENV RTMP_URL = "rtmp://localhost/live/livestream"
 ENTRYPOINT ["python main.py"]
 # CMD 会在docker run之后默认执行
 # main.py之后接入ENV参数
-CMD ["--MODEL", "$MODEL",
-"--CONF_THRES", "$CONF_THRES",
-"--IOU_THRES", "$IOU_THRES",
-"--INPUT_SOURCE", "$INPUT_SOURCE",
-"--ABNORMALFRAME_SAVEDIR", "$ABNORMALFRAME_SAVEDIR",
-"--FLV_SAVEDIR", "$FLV_SAVEDIR",
-"--AUTO_CLOSE_TIME","$AUTO_CLOSE_TIME",
-"--RTMP_URL", "$RTMP_URL"]
+CMD ["--MODEL", "$MODEL","--CONF_THRES", "$CONF_THRES","--IOU_THRES", "$IOU_THRES","--INPUT_SOURCE", "$INPUT_SOURCE","--ABNORMALFRAME_SAVEDIR", "$ABNORMALFRAME_SAVEDIR","--FLV_SAVEDIR", "$FLV_SAVEDIR","--AUTO_CLOSE_TIME","$AUTO_CLOSE_TIME","--RTMP_URL", "$RTMP_URL"]
 
 # Pull and Run
 # t=ultralytics/ultralytics:latest && sudo docker pull $t && sudo docker run -it --ipc=host --gpus all $t   MY-IH-APP python main.py --source 'rtsp://admin:admin@192.168.3.111:8554/live'

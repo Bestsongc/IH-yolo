@@ -50,6 +50,12 @@ def verify_args():
         print("--IOU_THRES 请输入0~1的数！")
         exit(0)
 
+    # 检测rtmp地址是否正确
+    if args.RTMP_URL[0:4] != 'rtmp':
+        print('rtmp地址不正确！')
+        exit(0)
+
+
 def process_frame(img_bgr, model):
     '''
     处理每一帧图像
