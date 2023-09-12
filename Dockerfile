@@ -70,10 +70,12 @@ RUN pip install  numpy==1.23.5
 # Remove exported models
 RUN rm -rf tmp
 
+#清理
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 #CD 到对应目录
 # pip requirements
 #TODO 或许setup.py就可以了
-RUN pip install --no-cache -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+#RUN pip install --no-cache -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 
 # Set environment variables
 ENV OMP_NUM_THREADS=1
@@ -96,8 +98,6 @@ ENV FLV_SAVEDIR = "FlvOut"
 # 自动关闭时间
 ENV AUTO_CLOSE_TIME = -1
 ENV RTMP_URL = "rtmp://localhost/live/livestream"
-
-
 
 # Usage Examples -------------------------------------------------------------------------------------------------------
 
