@@ -58,7 +58,6 @@ def verify_args():
         print('rtmp地址不正确！')
         exit(0)
 
-
 def process_frame(img_bgr, model):
     '''
     处理每一帧图像
@@ -78,7 +77,7 @@ def process_frame(img_bgr, model):
     # 只要置信度大于0.5的框
     results = model.predict(source=img_bgr, task='detect', show=False, stream=True, device=None, verbose=False,
                             vid_stride=1, iou=args.IOU_THRES, conf=args.CONF_THRES)
-    #     source	跟之前的yolov5一致，可以输入图片路径，图片文件夹路径，视频路径
+    # source	跟之前的yolov5一致，可以输入图片路径，图片文件夹路径，视频路径
     # save	保存检测后输出的图像，默认False
     # conf	用于检测的对象置信阈值，默认0.25
     # iou	用于nms的IOU阈值，默认0.7
@@ -256,10 +255,9 @@ def run_detect(source):
     start_time = time.time()
     # 创建上下文类
     video_out_context = OutStrategy.VideoOutContext()
-    # TODO 根据args参数创建具体输出策略类
     if args.FLV_SAVEDIR != 'CLOSE':
         video_out_context.add_strategy(OutStrategy.VideoOutStrategy_write_local_flv(out))
-    if args.show_cv2_windows:
+    if args.SHOW_CV2_WINDOW:
         video_out_context.add_strategy(OutStrategy.VideoOutStrategy_showCV2())
     if args.RTMP_URL != 'CLOSE':
         video_out_context.add_strategy(OutStrategy.VideoOutStrategy_push_rtmp(pipe_ffmpeg))
@@ -350,7 +348,8 @@ if __name__ == '__main__':
     parser.add_argument('--AUTO_CLOSE_TIME', type=int, default=-1, help='默认关闭（-1），超过多少秒自动关闭并保存视频')
     parser.add_argument('--RTMP_URL', type=str, default="rtmp://localhost/live/livestream",
                         help='推流的流媒体服务器的地址,"CLOSE"代表关闭')
-    parser.add_argument('--show_cv2_windows', type=bool, default=False, help="是否在前台打开窗口展示")
+    parser.add_argument('--SHOW_CV2_WINDOW', type=bool, default=False, help="是否在前台打开窗口展示")
+    parser.add_argument('--VIDEO_FPS', type=int, default=10, help="输入输出统一的视频帧率") #TODO 未实现
     args = parser.parse_args()
     verify_args()
     # 将参数打印到日志与控制台
