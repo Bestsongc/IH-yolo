@@ -254,6 +254,8 @@ def run_detect(source):
     start_time = time.time()
     last_time = time.time()
 
+    # TODO 根据args参数创建具体输出策略类
+    if(args.)
 
     # 无限循环，直到break被触发
     try:
@@ -274,32 +276,15 @@ def run_detect(source):
                 logger.error('process_frame报错！', error)
                 print('process_frame报错！', error)
 
-            # # 写入flv作为本地视频
-            # out.write(frame)
-
-            # 推流，rtmp流
-            pipe_ffmpeg.stdin.write(frame.tobytes())
-
-            # # 展示处理后的三通道图像q
-            # cv2.imshow('window_' + str(threading.current_thread().name), frame)
-
-            # # 每隔60毫秒检测一次键盘是否有输入
-            # key_pressed = cv2.waitKey(60)  # 每隔多少毫秒毫秒，获取键盘哪个键被按下
-            # # print('键盘上被按下的键：', key_pressed)
-            #
-            # if key_pressed in [ord('q'), 27]:  # 按键盘上的q或esc退出（在英文输入法下）
-            #     break
-
-            # 使用opencv读取rtsp视频流预览的时候，发现运行越久越卡的情况。分析是内存没有释放的缘故，在循环里每帧结束后把该帧用del()删除即可
-            del status
-            del frame
-
-            # TODO:实时修改flv视频的FPS
-            # # 每隔5s修改一次
-            # if time.time() - last_time > 5:
-            #     print('修改flv视频的FPS为yolo_FPS:', yolo_FPS)
-            #     out.set(cv2.CAP_PROP_FPS, yolo_FPS)
-            #     last_time = time.time()
+            if args.FLV_SAVEDIR != 'CLOSE':
+                # 写入flv作为本地视频
+                out.write(frame)
+            if args.RTMP_URL != 'CLOSE':
+                # 推流，rtmp流
+                pipe_ffmpeg.stdin.write(frame.tobytes())
+            if args.show_cv2_windows:
+                # 展示处理后的三通道图像
+                cv2.imshow('window_' + str(threading.current_thread().name), frame)
 
             if args.AUTO_CLOSE_TIME != -1: # 如果设置了自动关闭
                 # 发现超过30s则自动关闭
@@ -307,6 +292,12 @@ def run_detect(source):
                     print('超过30s，自动关闭')
                     logger.critical('超过30s，自动关闭')
                     break
+
+            # 使用opencv读取rtsp视频流预览的时候，发现运行越久越卡的情况。分析是内存没有释放的缘故，在循环里每帧结束后把该帧用del()删除即可
+            del status
+            del frame
+
+
 
     except Exception as error:
         print('中途中断 %s', str(error))
@@ -356,7 +347,8 @@ if __name__ == '__main__':
     parser.add_argument('--ABNORMALFRAME_SAVEDIR', type=str, default="abnormalFrame", help='异常帧保存路径')
     parser.add_argument('--FLV_SAVEDIR', type=str, default="FlvOut", help='默认关闭(CLOSE), flv视频保存路径')
     parser.add_argument('--AUTO_CLOSE_TIME', type=int, default=-1, help='默认关闭（-1），超过多少秒自动关闭并保存视频')
-    parser.add_argument('--RTMP_URL', type=str, default="rtmp://localhost/live/livestream", help='推流的流媒体服务器的地址')
+    parser.add_argument('--RTMP_URL', type=str, default="rtmp://localhost/live/livestream", help='推流的流媒体服务器的地址,"CLOSE"代表关闭')
+    parser.add_argument('--show_cv2_windows', type=bool, default=False, help="是否在前台打开窗口展示")
     args = parser.parse_args()
     verify_args()
     # 将参数打印到日志与控制台
