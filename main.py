@@ -7,6 +7,7 @@ import subprocess as sp
 import cv2
 import torch
 
+import OutStrategy
 from ultralytics import YOLO
 
 # 导入opencv-python
@@ -32,7 +33,9 @@ bbox_labelstr = {
 old_detectCount_map = {}  # 上一帧检测到的每个对象的数量
 import IH_VideoCapture
 
-yolo_FPS = 10 #默认为15
+yolo_FPS = 10  # 默认为15
+
+
 def verify_args():
     '''
     验证参数
@@ -211,9 +214,9 @@ def run_detect(source):
     fourcc = cv2.VideoWriter_fourcc('F', 'L', 'V', '1')  # 该参数是Flash视频，文件名后缀为.flv
     global yolo_FPS
     fps = yolo_FPS
-    print('fps:'+str(fps))
-    print('frame_width:'+str(frame_width))
-    print('frame_height:'+str(frame_height))
+    print('fps:' + str(fps))
+    print('frame_width:' + str(frame_width))
+    print('frame_height:' + str(frame_height))
     # flv保存路径要再加上当前线程的名字(需要去掉空格及特殊符号，来满足文件夹名字要求）与线程开始时间
     flv_savePath = args.FLV_SAVEDIR + '/' + threading.current_thread().name.replace(' ', '').replace(':',
                                                                                                      '-') + '-' + time.strftime(
@@ -225,7 +228,6 @@ def run_detect(source):
 
     # fourcc = cv2.VideoWriter_fourcc(*'XVID')
     # out = cv2.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
-
 
     # ffmpeg command
     command = ['ffmpeg',
@@ -241,7 +243,7 @@ def run_detect(source):
                '-preset', 'ultrafast',
                '-f', 'flv',
                args.RTMP_URL]
-    pipe_ffmpeg = sp.Popen(command, stdin=sp.PIPE) # stdin=sp.PIPE表示将视频流作为管道输入
+    pipe_ffmpeg = sp.Popen(command, stdin=sp.PIPE)  # stdin=sp.PIPE表示将视频流作为管道输入
 
     model = YOLO(model=args.MODEL, task='detect')  # 加载模型
     # 参数文档 https://docs.ultralytics.com/usage/cfg/
@@ -252,10 +254,17 @@ def run_detect(source):
         print('线程{}的摄像头打开成功,source={}'.format(threading.current_thread().name, source))
 
     start_time = time.time()
-    last_time = time.time()
-
+    # 创建上下文类
+    video_out_context = OutStrategy.VideoOutContext()
     # TODO 根据args参数创建具体输出策略类
-    if(args.)
+    if args.FLV_SAVEDIR != 'CLOSE':
+        video_out_context.add_strategy(OutStrategy.VideoOutStrategy_write_local_flv(out))
+    if args.show_cv2_windows:
+        video_out_context.add_strategy(OutStrategy.VideoOutStrategy_showCV2())
+    if args.RTMP_URL != 'CLOSE':
+        video_out_context.add_strategy(OutStrategy.VideoOutStrategy_push_rtmp(pipe_ffmpeg))
+    if args.AUTO_CLOSE_TIME != -1:
+        video_out_context.add_strategy(OutStrategy.AutoCloseStrategy(start_time, args.AUTO_CLOSE_TIME))
 
     # 无限循环，直到break被触发
     try:
@@ -271,27 +280,17 @@ def run_detect(source):
 
             # 逐帧处理
             try:
-                frame= process_frame(frame, model)
+                frame = process_frame(frame, model)
             except Exception as error:
                 logger.error('process_frame报错！', error)
                 print('process_frame报错！', error)
 
-            if args.FLV_SAVEDIR != 'CLOSE':
-                # 写入flv作为本地视频
-                out.write(frame)
-            if args.RTMP_URL != 'CLOSE':
-                # 推流，rtmp流
-                pipe_ffmpeg.stdin.write(frame.tobytes())
-            if args.show_cv2_windows:
-                # 展示处理后的三通道图像
-                cv2.imshow('window_' + str(threading.current_thread().name), frame)
-
-            if args.AUTO_CLOSE_TIME != -1: # 如果设置了自动关闭
-                # 发现超过30s则自动关闭
-                if time.time() - start_time > args.AUTO_CLOSE_TIME:
-                    print('超过30s，自动关闭')
-                    logger.critical('超过30s，自动关闭')
-                    break
+            # 逐帧输出
+            try:
+                video_out_context.handle_frame(frame)
+            except  Exception as error:
+                logger.error('video_out_context.handle_frame(frame)报错！', error)
+                print('video_out_context.handle_frame(frame)报错！', error)
 
             # 使用opencv读取rtsp视频流预览的时候，发现运行越久越卡的情况。分析是内存没有释放的缘故，在循环里每帧结束后把该帧用del()删除即可
             del status
@@ -311,6 +310,7 @@ def run_detect(source):
     cv2.destroyAllWindows()
     # 关闭ffmpeg
     pipe_ffmpeg.terminate()
+
 
 def run_program():
     # 读取source.streams中的每一行作为一个线程的source作为参数，启动一个线程
@@ -340,14 +340,16 @@ def run_program():
 if __name__ == '__main__':
     # 初始化
     parser = argparse.ArgumentParser()
-    parser.add_argument('--MODEL', type=str, default='IH-821-sim.onnx', help='Input your YOLOv8 model.支持ONNX，.pt,.engine')
+    parser.add_argument('--MODEL', type=str, default='IH-821-sim.onnx',
+                        help='Input your YOLOv8 model.支持ONNX，.pt,.engine')
     parser.add_argument('--CONF_THRES', type=float, default=0.5, help='Confidence threshold')
     parser.add_argument('--IOU_THRES', type=float, default=0.7, help='NMS IoU threshold')
     parser.add_argument('--INPUT_SOURCE', type=str, default=0, help='输入的 source.streams path Or 0 代表摄像头')
     parser.add_argument('--ABNORMALFRAME_SAVEDIR', type=str, default="abnormalFrame", help='异常帧保存路径')
     parser.add_argument('--FLV_SAVEDIR', type=str, default="FlvOut", help='默认关闭(CLOSE), flv视频保存路径')
     parser.add_argument('--AUTO_CLOSE_TIME', type=int, default=-1, help='默认关闭（-1），超过多少秒自动关闭并保存视频')
-    parser.add_argument('--RTMP_URL', type=str, default="rtmp://localhost/live/livestream", help='推流的流媒体服务器的地址,"CLOSE"代表关闭')
+    parser.add_argument('--RTMP_URL', type=str, default="rtmp://localhost/live/livestream",
+                        help='推流的流媒体服务器的地址,"CLOSE"代表关闭')
     parser.add_argument('--show_cv2_windows', type=bool, default=False, help="是否在前台打开窗口展示")
     args = parser.parse_args()
     verify_args()
@@ -361,5 +363,3 @@ if __name__ == '__main__':
     print('device:{}'.format(device))
 
     run_program()
-
-
