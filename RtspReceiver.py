@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 # @Author  : Zhuofan Shi
+# @Time    : 2023/9/21 11:18
+# @File    : RtspReceiver.py
+# @Software: PyCharm
+# -*- coding: utf-8 -*-
+# @Author  : Zhuofan Shi
 # @Time    : 2023/8/23 11:38
 # @File    : IH_VideoCapture.py
 # @Software: PyCharm
@@ -9,7 +14,7 @@ import time
 import cv2
 
 
-class MyVideoCapture(object):
+class RtspReceiver(object):
     '''
     额外开一个线程，用于读取rtsp视频流
     参考：https://blog.csdn.net/weixin_43747857/article/details/121672730
@@ -18,7 +23,13 @@ class MyVideoCapture(object):
 
     def __init__(self, source=0):
         # Create a VideoCapture object
-        self.cap = cv2.VideoCapture(source)
+        try:
+            self.cap = cv2.VideoCapture(source)
+        except  Exception as e:
+            print(e)
+            print(f'{source}---rtsp链接失败---',source)
+            exit(0)
+
         self.status = False
         self.frame = None
         # Default resolutions of the frame are obtained (system dependent)
@@ -63,7 +74,7 @@ class MyVideoCapture(object):
 
 if __name__ == '__main__':
     rtsp_stream_link = 'rtsp://admin:admin@192.168.3.111:8554/live'
-    video_stream_widget = MyVideoCapture(rtsp_stream_link)
+    video_stream_widget = RtspReceiver(rtsp_stream_link)
     while True:
         try:
             status, frame = video_stream_widget.read()
