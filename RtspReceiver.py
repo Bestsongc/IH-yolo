@@ -10,7 +10,7 @@
 # @Software: PyCharm
 import threading
 import time
-
+from logger_config import logger
 import cv2
 
 
@@ -24,10 +24,11 @@ class RtspReceiver(object):
     def __init__(self, source=0):
         # Create a VideoCapture object
         try:
+            if source == None:
+                raise Exception(f'source:{source} is None')
             self.cap = cv2.VideoCapture(source)
         except  Exception as e:
-            print(e)
-            print(f'{source}---rtsp链接失败---',source)
+            logger.error(f'cv2.VideoCapture(source) error:{e}')
             exit(0)
 
         self.status = False
