@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 # @Author  : Zhuofan Shi
 # @Time    : 2023/10/8 15:47
-# @File    : YoloManager.py
+# @File    : yolo_manager.py
 # @Software: PyCharm
 import concurrent.futures
 
 import cv2
+
+from handler_abnormal_strategy import HandlerAbnormalContext, HandlerAbnormalStrategyUploadScreenshot, \
+    HandlerAbnormalStrategyNewIdentifier, HandlerAbnormalStrategyUploadInformation
 from logger_config import logger
 from RtspReceiver import RtspReceiver
-from YoloInductor import YoloInductor
+from yolo_inductor import YoloInductor
 
 class YoloManager:
     def verify_args(self, args):
@@ -62,37 +65,36 @@ class YoloManager:
 
     def start_detect(self):
         """
-        启动检测器
+        启动轮询检测器
+        将轮询检查每个接收器的状态，如果有异常则启动单独的持续推理
         :return:
         """
-        yoloInductor = YoloInductor(args)
+        yoloInductor = YoloInductor(self.args)
+        #设置处理异常策略
+        # 2.1.上传异常的视频截图至服务器，
+        # 2.2.单独新开辟一条推理线程，并作为一条视频数据源不断输出到SRS
+        # 2.3.需要异常信息放入数据库
+        handler_abnormal_context = HandlerAbnormalContext()
+        handler_abnormal_context.add_strategy(HandlerAbnormalStrategyUploadScreenshot())
+        handler_abnormal_context.add_strategy(HandlerAbnormalStrategyNewIdentifier())
+        handler_abnormal_context.add_strategy(HandlerAbnormalStrategyUploadInformation())
         while True:
             for i, receiver in self.receivers:
                 status, frame = receiver.read()
                 logger.info(f'---{i}:收到frame--')
                 if status:
                     # 1.使用yolo推理
-                    frame = yoloInductor.process_frame(frame)
-                    # 2.如果是异常
-                    # 2.1.保存异常的视频截图，
-                    # 2.2.单独新开辟一条推理线程，并作为一条视频数据源不断输出到SRS
-                    # 2.3.异常放入数据库
+                    frame , is_abnormal = yoloInductor.process_frame(frame)
+                    # 2.如果出现异常
+                    if is_abnormal:
+                        handler_abnormal_context.execute(frame)
                     # 3.如果没有异常则跳过
-
-
-
-    def start_pushers(self, rtmp):
-        """
-        启动导出器
-        :param rtmp: rtmp地址
-        :return:
-        """
-        pass
-        # TODO
-        # exporter = VideoExporter(rtmp)
-
-    def start(self):
-        self.start_detect()
+                    else:
+                        pass
+                else:
+                    logger.error(f'---{i}:收到frame失败--')
+                    # TODO 上传异常信息至服务器
+                    pass
 
 if __name__ == '__main__':
     manager = YoloManager()

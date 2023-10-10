@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Author  : Zhuofan Shi
 # @Time    : 2023/10/9 16:18
-# @File    : YoloInductor.py
+# @File    : yolo_inductor.py
 # @Software: PyCharm
 import argparse
 from logger_config import logger
@@ -23,10 +23,6 @@ bbox_labelstr = {
     'offset_y': -10,  # Y 方向，文字偏移距离，向下为正
 }
 old_detectCount_map = {}  # 上一帧检测到的每个对象的数量
-
-yolo_FPS = 10  # 默认为15
-
-
 class YoloInductor:
     def process_frame(img_bgr, model, args):
         '''
@@ -71,6 +67,8 @@ class YoloInductor:
 
         # results = model(img_bgr, verbose=False)  # verbose设置为False，不单独打印每一帧预测结果
 
+        # 开始画框
+        is_abnormal = False  # 是否异常
         for result in results:
 
             boxes = result.boxes
@@ -140,20 +138,17 @@ class YoloInductor:
                                                                                   time.localtime()),
                                                                     str(detectCount_map), yolo_FPS)
                         )
-            print("线程{}-{}-当前检测到:{},FPS:{:.2f}".format(threading.current_thread().name,
-                                                              time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()),
-                                                              str(detectCount_map), yolo_FPS)
-                  )
 
-            # 检测是否异常
+
+            # 对异常情况画标记
             # 异常条件：检测到的head，water，fire,fork数量中的任意一个相比于上一帧变多
+            #TODO 判断异常条件有待修改
             if (detectCount_map.get('head', 0) > old_detectCount_map.get('head', 0) or
                     detectCount_map.get('water', 0) > old_detectCount_map.get('water', 0) or
                     detectCount_map.get('fire', 0) > old_detectCount_map.get('fire', 0) or
                     detectCount_map.get('fork', 0) > old_detectCount_map.get('fork', 0)):
-                # 如果有异常-> 1.画面写异常 2.保存当前帧
+                is_abnormal = True
                 logger.critical('有异常现象')
-                print('----!!!!!有异常现象---------')
                 # 保存异常帧，加入时间戳
                 cv2.imwrite(
                     args.ABNORMALFRAME_SAVEDIR + '/' + 'ABNORMAL_' + time.strftime("%Y-%m-%d_%H-%M-%S",
@@ -166,4 +161,4 @@ class YoloInductor:
             old_detectCount_map.clear()
             old_detectCount_map.update(detectCount_map)
 
-        return img_bgr
+        return img_bgr,is_abnormal

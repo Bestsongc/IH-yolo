@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 # @Author  : Zhuofan Shi
 # @Time    : 2023/10/7 16:07
-# @File    : Flask_app.py
+# @File    : flask_app.py
 # @Software: PyCharm
 import threading
 
 from flask import Flask, request
 
-from YoloManager import YoloManager
+from yolo_manager import YoloManager
 from logger_config import logger
-from IH_Main import yolo_start
 
 app = Flask(__name__)
 
@@ -80,7 +79,7 @@ def start_yolo_py():
         continue
     logger.info('---yolo_manager启动---')
     yolo_manager = YoloManager(arguments, url_list)
-    yolo_manager.start_detect()
+    threading.Thread(target=lambda: yolo_manager.start_detect()).start()
 
 
 if __name__ == '__main__':
