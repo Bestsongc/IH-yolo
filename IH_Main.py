@@ -11,7 +11,7 @@ import subprocess as sp
 import cv2
 import torch
 import OutStrategy
-import RtspReceiver
+import rtsp_receiver
 from ultralytics import YOLO
 import pymysql
 import requests

@@ -10,6 +10,7 @@ import time
 import subprocess as sp
 import cv2
 import torch
+from ultralytics import YOLO
 
 # 框（rectangle）可视化配置
 bbox_color = (150, 0, 0)  # 框的 BGR 颜色
@@ -24,7 +25,14 @@ bbox_labelstr = {
 }
 old_detectCount_map = {}  # 上一帧检测到的每个对象的数量
 class YoloInductor:
-    def process_frame(img_bgr, model, args):
+    def __init__(self,args):
+        self.args = args
+        self.model = YOLO(model=self.args.MODEL, task='detect')  # 加载模型
+
+
+
+
+    def process_frame(self,img_bgr):
         '''
         利用YOLO处理每一帧图像，并且画出检测框，写上类别文字，返回处理后的一帧
         输入摄像头画面 bgr-array，输出图像 bgr-array
@@ -41,8 +49,8 @@ class YoloInductor:
         global yolo_FPS
         start_time = time.time()
         # 只要置信度大于0.5的框
-        results = model.predict(source=img_bgr, task='detect', show=False, stream=True, device=None, verbose=False,
-                                vid_stride=1, iou=args.IOU_THRES, conf=args.CONF_THRES)
+        results = self.model.predict(source=img_bgr, task='detect', show=False, stream=True, device=None, verbose=False,
+                                vid_stride=1, iou=self.args.IOU_THRES, conf=self.args.CONF_THRES)
         # source	跟之前的yolov5一致，可以输入图片路径，图片文件夹路径，视频路径
         # save	保存检测后输出的图像，默认False
         # conf	用于检测的对象置信阈值，默认0.25
@@ -149,11 +157,6 @@ class YoloInductor:
                     detectCount_map.get('fork', 0) > old_detectCount_map.get('fork', 0)):
                 is_abnormal = True
                 logger.critical('有异常现象')
-                # 保存异常帧，加入时间戳
-                cv2.imwrite(
-                    args.ABNORMALFRAME_SAVEDIR + '/' + 'ABNORMAL_' + time.strftime("%Y-%m-%d_%H-%M-%S",
-                                                                                   time.localtime()) + '.jpg',
-                    img_bgr)
                 # 写异常,color为红色
                 img_bgr = cv2.putText(img_bgr, 'ABNORMAL', (25, 140), cv2.FONT_HERSHEY_SIMPLEX, 1.25, (1, 1, 250), 2)
 

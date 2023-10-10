@@ -10,7 +10,7 @@ import cv2
 from handler_abnormal_strategy import HandlerAbnormalContext, HandlerAbnormalStrategyUploadScreenshot, \
     HandlerAbnormalStrategyNewIdentifier, HandlerAbnormalStrategyUploadInformation
 from logger_config import logger
-from RtspReceiver import RtspReceiver
+from rtsp_receiver import RtspReceiver
 from yolo_inductor import YoloInductor
 
 class YoloManager:
@@ -21,12 +21,13 @@ class YoloManager:
 
         '''
         if not (0 < args.CONF_THRES <= 1):
-            print("--CONF_THRES 请输入0~1的数！")
+            logger.error("--CONF_THRES 请输入0~1的数！")
             exit(0)
 
         if not (0 < args.IOU_THRES <= 1):
-            print("--IOU_THRES 请输入0~1的数！")
+            logger.error("--IOU_THRES 请输入0~1的数！")
             exit(0)
+
 
     def __init__(self, args, url_list):
         # self.verify_args(args)
@@ -93,7 +94,6 @@ class YoloManager:
                         pass
                 else:
                     logger.error(f'---{i}:收到frame失败--')
-                    # TODO 上传异常信息至服务器
                     pass
 
 if __name__ == '__main__':

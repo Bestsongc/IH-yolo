@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 # @Author  : Zhuofan Shi
 # @Time    : 2023/9/21 11:21
-# @File    : VideoPusher.py
+# @File    : rtmp_pusher.py
 # @Software: PyCharm
 import subprocess as sp
 import threading
 
 
-class VideoPusher:
+class RtmpPusher:
     def __init__(self, rtmp,frame_width, frame_height, fps):
         self.rtmp = rtmp
         self.pipe_ffmpeg = self.start_ffmpeg(rtmp,frame_width, frame_height, fps)

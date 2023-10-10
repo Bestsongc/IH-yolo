@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Author  : Zhuofan Shi
 # @Time    : 2023/9/21 11:18
-# @File    : RtspReceiver.py
+# @File    : rtsp_receiver.py
 # @Software: PyCharm
 # -*- coding: utf-8 -*-
 # @Author  : Zhuofan Shi
