@@ -6,7 +6,7 @@
 import threading
 
 from flask import Flask, request
-
+import yolo_config
 from yolo_manager import YoloManager
 from logger_config import logger
 
@@ -23,11 +23,9 @@ def start():
             "data": "no data."
         }
     try:
-        global arguments
-        global url_list
         # 获取POST参数
-        arguments = json_param['data']['arguments']
-        url_list = json_param['data']['url_list']
+        yolo_config.arguments = json_param['data']['arguments']
+        yolo_config.url_list = json_param['data']['url_list']
     except Exception as e:
         return {
             "msg": "error",
@@ -45,50 +43,30 @@ def start():
 # TODO
 @app.route('/yolo/updateUrl', methods=['POST'])
 def update_url():
-    json_param = request.json
-    # 从中获取rtsp_urls
-    if json_param is None:
-        return {
-            "msg": "error",
-            "data": "no data."
-        }
-    try:
-        global arguments
-        global url_list
-        # 获取POST参数
-        arguments = json_param['data']['arguments']
-        url_list = json_param['data']['url_list']
-    except Exception as e:
-        return {
-            "msg": "error",
-            "data": f"get arguments error:{e}"
-        }
-    # TODO 更新输入源地址
-    # global yolo_manager
-    # yolo_manager.update_receivers()
-    return {
-        "msg": "success",
-        "data": "start yolo."
-    }
+    #TODO
+    pass
 
 
-def start_yolo_py():
+def awaiting_start_yolo():
     global is_start
     global yolo_manager
     while not is_start:
         continue
     logger.info('---yolo_manager启动---')
-    yolo_manager = YoloManager(arguments, url_list)
-    threading.Thread(target=lambda: yolo_manager.start_detect()).start()
-
+    yolo_manager = YoloManager()
+    detect_thread = threading.Thread(target=lambda: yolo_manager.start_detect())
+    detect_thread.name = 'detect_thread'
+    detect_thread.start()
+    
 
 if __name__ == '__main__':
-
+    #修改主线程名字
+    threading.current_thread().name = 'flask_app'
     is_start = False
-    arguments = None
-    url_list = None
     yolo_manager = None
-    thread = threading.Thread(target=lambda: start_yolo_py())
-    thread.start()
-    # 启动监听
+    awaiting_start_yolo_thread = threading.Thread(target=lambda: awaiting_start_yolo())
+    awaiting_start_yolo_thread.name = 'awaiting_start_yolo_thread'
+    awaiting_start_yolo_thread.start()
+    logger.info('---flask_app启动监听---')
+    # 阻塞状态启动监听
     app.run()

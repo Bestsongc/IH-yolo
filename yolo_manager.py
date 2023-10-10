@@ -12,6 +12,7 @@ from handler_abnormal_strategy import HandlerAbnormalContext, HandlerAbnormalStr
 from logger_config import logger
 from rtsp_receiver import RtspReceiver
 from yolo_inductor import YoloInductor
+import yolo_config
 
 class YoloManager:
     def verify_args(self, args):
@@ -29,14 +30,19 @@ class YoloManager:
             exit(0)
 
 
-    def __init__(self, args, url_list):
+    def __init__(self):
         # self.verify_args(args)
-        self.args = args
-        self.url_list = url_list
+        logger.info('---YoloManager初始化---')
+        logger.info('yolo_config.arguments:'+str(yolo_config.arguments))
+        logger.info('yolo_config.url_list:'+str(yolo_config.url_list))
+        self.args = yolo_config.arguments
+        self.url_list = yolo_config.url_list
         self.rtsp_list = []
-        for url in url_list:
-            self.rtsp_list.append(url['camema_rtsp_url'])
+        for url in yolo_config.url_list:
+            self.rtsp_list.append(url['camera_rtsp_url'])
+
         self.receivers = self.start_receivers(self.rtsp_list)
+
 
     def start_receivers(self, rtsp_list, max_workers=10):
         """
@@ -70,7 +76,7 @@ class YoloManager:
         将轮询检查每个接收器的状态，如果有异常则启动单独的持续推理
         :return:
         """
-        yoloInductor = YoloInductor(self.args)
+        yoloInductor = YoloInductor()
         #设置处理异常策略
         # 2.1.上传异常的视频截图至服务器，
         # 2.2.单独新开辟一条推理线程，并作为一条视频数据源不断输出到SRS

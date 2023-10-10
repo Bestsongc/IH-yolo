@@ -11,7 +11,7 @@ import subprocess as sp
 import cv2
 import torch
 from ultralytics import YOLO
-
+import yolo_config
 # 框（rectangle）可视化配置
 bbox_color = (150, 0, 0)  # 框的 BGR 颜色
 bbox_thickness = 2  # 框的线宽

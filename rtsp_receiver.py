@@ -26,7 +26,9 @@ class RtspReceiver(object):
         try:
             if source == None:
                 raise Exception(f'source:{source} is None')
-            self.cap = cv2.VideoCapture(source)
+            self.cap = cv2.VideoCapture()
+            self.cap.setExceptionMode(True)
+            self.cap.open(source)
         except  Exception as e:
             logger.error(f'cv2.VideoCapture(source) error:{e}')
             exit(0)
