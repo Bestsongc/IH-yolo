@@ -25,7 +25,7 @@ def start():
     try:
         # 获取POST参数
         yolo_config.arguments = json_param['data']['arguments']
-        yolo_config.url_list = json_param['data']['url_list']
+        yolo_config.cameras = json_param['data']['cameras']
     except Exception as e:
         return {
             "msg": "error",
@@ -43,7 +43,7 @@ def start():
 # TODO
 @app.route('/yolo/updateUrl', methods=['POST'])
 def update_url():
-    #TODO
+    #TODO 可以用dict来映射修改receiver，再根据线程名把额外识别者一起删了捏
     pass
 
 

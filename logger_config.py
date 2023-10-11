@@ -35,5 +35,3 @@ console_handler.setFormatter(formatter)
 # 将handler添加到logger
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
-
-logger.info('logger_config.py初始化完成')

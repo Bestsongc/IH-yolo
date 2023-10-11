@@ -6,12 +6,11 @@
 import threading
 import time
 from abc import ABC, abstractmethod
-
 from rtmp_pusher import RtmpPusher
 from rtsp_receiver import RtspReceiver
 from logger_config import logger
 from yolo_inductor import YoloInductor
-
+from yolo_identifier import YoloIdentifier
 
 class HandlerAbnormalStrategy(ABC):
     '''
@@ -19,7 +18,7 @@ class HandlerAbnormalStrategy(ABC):
     '''
 
     @abstractmethod
-    def execute(self, frame):
+    def execute(self, frame, source_receiver: RtspReceiver, target_rtmp):
         pass
 
 
@@ -28,67 +27,44 @@ class HandlerAbnormalStrategyUploadScreenshot(HandlerAbnormalStrategy):
     上传异常的视频截图至服务器
     '''
 
-    def execute(self, frame):
+    def execute(self, frame, source_receiver, target_rtmp):
         # TODO
         pass
 
 
 class HandlerAbnormalStrategyNewIdentifier(HandlerAbnormalStrategy):
     '''
-    单独新开辟一条推理线程，并作为一条视频数据源不断输出到SRS
+    新建一个识别线程
     '''
+    def __init__(self,args):
+        self.args = args
 
-    def execute(self, frame):
-        threading.Thread(target=lambda: self.process_stream_and_push(args, source_rtsp, target_rtmp)).start()
+    def execute(self, frame, source_receiver, target_rtmp):
+        '''
+        单独新开辟一条推理线程，并作为一条视频数据源不断输出到SRS
+        1.如果这个receiver对应的camera_id还没有被单独开辟过推理线程，则新开辟
+        2.如果这个receiver对应的camera_id已经被单独开辟过推理线程，则不新开辟
+        Args:
+            frame ():
+            source_receiver ():
+            target_rtmp ():
 
+        Returns:
 
-
-    def process_stream_and_push(self, args, receiver: RtspReceiver, target_rtmp):
-        yolo_inductor = YoloInductor(args)
-        # 最大持续识别时间(单位:秒)
-        identifier_max_duration = args.IDENTIFIER_MAX_DURATION
-        rtmp_pusher = RtmpPusher(args,target_rtmp) #TODO
-        start_time = time.time()
-        try:
-            while True:
-                is_abnormal = False
-                # 获取画面
-                status, frame = receiver.read()
-
-                if not status:  # 如果获取画面不成功，则退出
-                    logger.error('status is false,need waiting')
-                    time.sleep(1)
-                    continue
-                # 逐帧处理
-                try:
-                    frame, is_abnormal = yolo_inductor.process_frame(frame)
-                except Exception as error:
-                    logger.error('process_frame报错！', error)
-
-
-                # 将frame推送到rtmp
-                    rtmp_pusher.push() #TODO
-
-                # 自动退出功能
-                # 如果此后identifier_max_duration内没有异常，则退出
-                if not is_abnormal:
-                    if time.time() - start_time > identifier_max_duration:
-                        break
-                else:
-                    start_time = time.time()
-
-        except Exception as error:
-            print('中途中断 %s', str(error))
-            logger.error('中途中断:%s', str(error))
-
-
+        '''
+        if(True):#TODO 判断这个receiver对应的camera_id还没有被单独开辟过推理线程
+            identifier_thread = threading.Thread(target=lambda: YoloIdentifier(self.args,source_receiver, target_rtmp).process_stream_and_push())
+            identifier_thread.name = f'identifier_camera{source_receiver.get_camera_id()}_thread'
+            identifier_thread.start()
+            logger.info(f'---新启动一条推理线程{source_receiver.get_source()}->{target_rtmp}---')
+        #TODO 也许可以通过修改对象引用identifiers[]来实现删除线程的功能
 
 class HandlerAbnormalStrategyUploadInformation(HandlerAbnormalStrategy):
     '''
     上传异常信息至服务器
     '''
 
-    def execute(self, frame):
+    def execute(self, frame, source_receiver, target_rtmp):
         # TODO
         pass
 
@@ -108,7 +84,7 @@ class HandlerAbnormalContext:
         '''
         self.strategy.append(strategy)
 
-    def execute(self, frame):
+    def execute(self, frame, source_receiver, target_rtmp):
         '''
         执行策略
         Args:
@@ -118,4 +94,4 @@ class HandlerAbnormalContext:
 
         '''
         for strategy in self.strategy:
-            strategy.execute(frame)
+            strategy.execute(frame, source_receiver, target_rtmp)

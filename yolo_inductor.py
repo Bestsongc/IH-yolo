@@ -11,7 +11,6 @@ import subprocess as sp
 import cv2
 import torch
 from ultralytics import YOLO
-import yolo_config
 # 框（rectangle）可视化配置
 bbox_color = (150, 0, 0)  # 框的 BGR 颜色
 bbox_thickness = 2  # 框的线宽
@@ -27,8 +26,8 @@ old_detectCount_map = {}  # 上一帧检测到的每个对象的数量
 class YoloInductor:
     def __init__(self,args):
         self.args = args
-        self.model = YOLO(model=self.args.MODEL, task='detect')  # 加载模型
-
+        self.model = YOLO(model=self.args['MODEL'], task='detect')  # 加载模型
+        logger.info('---YoloInductor初始化成功---')
 
 
 
@@ -50,7 +49,7 @@ class YoloInductor:
         start_time = time.time()
         # 只要置信度大于0.5的框
         results = self.model.predict(source=img_bgr, task='detect', show=False, stream=True, device=None, verbose=False,
-                                vid_stride=1, iou=self.args.IOU_THRES, conf=self.args.CONF_THRES)
+                                vid_stride=1, iou=self.args['IOU_THRES'], conf=self.args['CONF_THRES'])
         # source	跟之前的yolov5一致，可以输入图片路径，图片文件夹路径，视频路径
         # save	保存检测后输出的图像，默认False
         # conf	用于检测的对象置信阈值，默认0.25
@@ -141,10 +140,7 @@ class YoloInductor:
                                       (255, 0, 255),
                                       1)
             # 输出线程号+时间戳+检测到的每个对象的数量
-            logger.info("线程{}-{}-当前检测到:{},FPS:{:.2f}".format(threading.current_thread().name,
-                                                                    time.strftime("%Y-%m-%d_%H-%M-%S",
-                                                                                  time.localtime()),
-                                                                    str(detectCount_map), yolo_FPS)
+            logger.info("当前检测到:{},FPS:{:.2f}".format(str(detectCount_map), yolo_FPS)
                         )
 
 
@@ -156,7 +152,7 @@ class YoloInductor:
                     detectCount_map.get('fire', 0) > old_detectCount_map.get('fire', 0) or
                     detectCount_map.get('fork', 0) > old_detectCount_map.get('fork', 0)):
                 is_abnormal = True
-                logger.critical('有异常现象')
+                logger.warning('有异常现象')
                 # 写异常,color为红色
                 img_bgr = cv2.putText(img_bgr, 'ABNORMAL', (25, 140), cv2.FONT_HERSHEY_SIMPLEX, 1.25, (1, 1, 250), 2)
 
@@ -165,3 +161,4 @@ class YoloInductor:
             old_detectCount_map.update(detectCount_map)
 
         return img_bgr,is_abnormal
+

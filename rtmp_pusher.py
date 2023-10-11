@@ -5,13 +5,12 @@
 # @Software: PyCharm
 import subprocess as sp
 import threading
-
-
+from logger_config import logger
 class RtmpPusher:
     def __init__(self, rtmp,frame_width, frame_height, fps):
         self.rtmp = rtmp
         self.pipe_ffmpeg = self.start_ffmpeg(rtmp,frame_width, frame_height, fps)
-
+        logger.info(f'---RtmpPusher初始化完成---')
 
     def start_ffmpeg(self, rtmp,frame_width, frame_height, fps):
         """
