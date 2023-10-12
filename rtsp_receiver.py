@@ -27,6 +27,7 @@ class RtspReceiver(object):
     def __init__(self, source,camera_id):
         # Create a VideoCapture object
         self.source = source
+        self.running = True
         try:
             if source == None:
                 raise Exception(f'source:{source} is None')
@@ -43,13 +44,15 @@ class RtspReceiver(object):
         self.frame_width = self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)
         self.frame_height = self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
-        # Start the thread to read frames from the video stream
-        # 运行时就开守护线程
-        self.thread = threading.Thread(target=self.update, args=())
-        self.thread.daemon = True
-        self.thread.start()
+
+
+        # 运行时就开守护线程(如果不用线程池的话）
+        # self.thread = threading.Thread(target=self.update, args=())
+        # self.thread.daemon = True
+        # self.thread.start()
         # 启动时必须需要等待1s，让守护进程接收rtsp加载完成，否则主线程提前出发拿到false
-        time.sleep(1)
+        # time.sleep(1)
+
         logger.info(f'---成功创建Receiver:{self.source}---')
 
     def get_camera_id(self):
@@ -65,9 +68,8 @@ class RtspReceiver(object):
 
     def update(self):
         # Read the next frame from the stream in a different thread
-        while True:
-            if self.cap.isOpened():
-                self.status, self.frame = self.cap.read()
+        while self.cap.isOpened():
+            self.status, self.frame = self.cap.read()
 
     def isOpened(self):
         return self.cap.isOpened()

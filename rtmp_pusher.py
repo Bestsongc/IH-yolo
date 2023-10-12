@@ -44,3 +44,7 @@ class RtmpPusher:
         """
         # TODO
         self.pipe_ffmpeg.stdin.write(frame.tobytes())
+
+    def stop(self):
+        self.pipe_ffmpeg.kill()
+        logger.info(f'---{self.rtmp}的RtmpPusher关闭---')

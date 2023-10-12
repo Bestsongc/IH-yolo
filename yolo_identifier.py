@@ -17,6 +17,11 @@ class YoloIdentifier:
         self.source_receiver = source_receiver
         self.target_rtmp = target_rtmp
         logger.info(f'---camera_id:{source_receiver.get_camera_id()}的YoloIdentifier初始化---')
+        self.running = True
+    def stop(self):
+        self.running = False
+
+
     def process_stream_and_push(self):
         yolo_inductor = YoloInductor(self.args)
         # 最大持续识别时间(单位:秒)
@@ -28,7 +33,7 @@ class YoloIdentifier:
         start_time = time.time()
         logger.info(f'---camera_id:{self.source_receiver.get_camera_id()}的YoloIdentifier开始识别---')
         try:
-            while True:
+            while self.running:
                 is_abnormal = False
                 # 获取画面
                 status, frame = self.source_receiver.read()
@@ -53,6 +58,10 @@ class YoloIdentifier:
                         break
                 else:
                     start_time = time.time()
+
+            # 释放资源
+            rtmp_pusher.stop()
+            del rtmp_pusher
 
         except Exception as error:
             logger.error('中途中断:%s', str(error))

@@ -4,6 +4,7 @@
 # @File    : yolo_manager.py
 # @Software: PyCharm
 import concurrent.futures
+import threading
 
 import cv2
 
@@ -14,6 +15,7 @@ from rtsp_receiver import RtspReceiver
 from yolo_inductor import YoloInductor
 import yolo_config
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 
 class YoloManager:
@@ -57,42 +59,57 @@ class YoloManager:
         self.rtmp_list = []
         for url in yolo_config.cameras:
             self.rtmp_list.append(url['srs_rtmp_url'])
-        self.receivers = self.init_receivers(self.cameras)
-        self.identifiers = []
+        self.receivers: dict = self.init_receivers(self.cameras)
+        self.identifiers: dict = {}
+        self.identifier_thread_pool = ThreadPoolExecutor(
+            max_workers=self.args['MAX_IDENTIFIER_NUM'])  # TODO 进程是要使用的工作线程数。如果进程为 None 则使用 os.cpu_count() 返回的数字。
+        self.receiver_update_thread_pool = ThreadPoolExecutor(max_workers=self.args['MAX_RECEIVER_UPDATE_NUM'])  # TODO
+        # 可重入锁
+        self.receivers_lock = threading.RLock()
 
-    def init_receivers(self, cameras, max_workers=10):
+    def init_receivers(self, cameras) -> dict:
         """
         启动接收器
         :param rtsp_list: rtsp地址列表
         :return:
 
         Args:
+            cameras ():
             max_workers ():
         """
-        # TODO 创建一个线程池来优化
-        # with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        #     # 使用线程池实例化多个 RtspReceiver 对象
-        #     receivers = [executor.submit(RtspReceiver, url) for url in rtsp_list]
-        #     # 等待所有线程完成
-        # return receivers
-
-        # 法2.简单多线程
-        receivers = []
+        # 优化法1.创建一个线程池来优化
+        # 优化2.使用dict来存储receiver
+        receivers = {}
         for camera in cameras:
-            camera_id=None
+            camera_id = None
             try:
                 camera_rtsp_url = camera['camera_rtsp_url']
                 camera_id = camera['camera_id']
-                receivers.append(RtspReceiver(camera_rtsp_url, camera_id))
+                receivers[camera_id] = RtspReceiver(camera_rtsp_url, camera_id)
+                self.receiver_update_thread_pool.submit(lambda r: r.update(), receivers[camera_id])
                 logger.info(f'---成功添加camera_id:{camera_id}的接收器---')
             except Exception as e:
                 logger.error(f'---camera_id:{camera_id}的接收器启动失败---')
                 logger.error(f'---{e}---')
                 continue
-        logger.info(f'---成功启动{len(receivers)}个接收器---')
         return receivers
+        # # 法2.简单多线程
+        # receivers = []
+        # for camera in cameras:
+        #     camera_id = None
+        #     try:
+        #         camera_rtsp_url = camera['camera_rtsp_url']
+        #         camera_id = camera['camera_id']
+        #         receivers.append(RtspReceiver(camera_rtsp_url, camera_id))
+        #         logger.info(f'---成功添加camera_id:{camera_id}的接收器---')
+        #     except Exception as e:
+        #         logger.error(f'---camera_id:{camera_id}的接收器启动失败---')
+        #         logger.error(f'---{e}---')
+        #         continue
+        # logger.info(f'---成功启动{len(receivers)}个接收器---')
+        # return receivers
 
-    def add_receivers(self, camera)->str:
+    def add_receivers(self, camera) -> str:
         '''
         添加接收器
         Args:
@@ -101,11 +118,17 @@ class YoloManager:
         Returns:
 
         '''
-        camera_id=None
+        camera_id = None
         try:
+            logger.info(f'---开始添加camera_id:{camera_id}的接收器---')
+            # 加锁
+            self.receivers_lock.acquire()
             camera_rtsp_url = camera['camera_rtsp_url']
             camera_id = camera['camera_id']
-            self.receivers.append(RtspReceiver(camera_rtsp_url, camera_id))
+            self.receivers[camera_id] = RtspReceiver(camera_rtsp_url, camera_id)
+            self.receiver_update_thread_pool.submit(lambda r: r.update(), self.receivers[camera_id])
+            # 释放锁
+            self.receivers_lock.release()
             logger.info(f'---成功添加camera_id:{camera_id}的接收器---')
             return "success"
         except Exception as e:
@@ -113,9 +136,55 @@ class YoloManager:
             logger.error(f'---{e}---')
             return "fail"
 
-    def update_receivers(self, rtsp_list, max_workers=10):
-        # TODO
-        pass
+    def update_receiver(self, camera) -> str:
+        '''
+        更新接收器
+        Args:
+            camera ():
+
+        Returns:
+
+        '''
+        camera_id = None
+        try:
+            logger.info(f'---开始更新camera_id:{camera_id}的接收器---')
+            # 加锁
+            self.receivers_lock.acquire()
+            camera_id = camera['camera_id']
+            # 先删后加
+            self.delete_receiver(camera_id)
+            self.add_receivers(camera)
+            # 释放锁
+            self.receivers_lock.release()
+            logger.info(f'---成功更新camera_id:{camera_id}的接收器---')
+            return "success"
+        except Exception as e:
+            logger.error(f'---camera_id:{camera_id}的接收器更新失败---')
+            logger.error(f'---{e}---')
+            return "fail"
+
+    def delete_receiver(self, camera_id) -> str:
+        # TODO 需要考虑线程安全
+        try:
+            logger.info(f'---开始删除camera_id:{camera_id}的接收器---')
+            # 加锁
+            self.receivers_lock.acquire()
+            # 1.让receiver停止
+            self.receivers[camera_id].release()
+            # 2.删除receiver
+            self.receivers.pop(camera_id)
+            # 3.如果有则停止与删除identifiers
+            if camera_id in self.identifiers.keys():
+                self.identifiers[camera_id].stop()
+                self.identifiers.pop(camera_id)
+            # 释放锁
+            self.receivers_lock.release()
+            logger.info(f'---成功删除camera_id:{camera_id}的接收器---')
+            return "success"
+        except Exception as e:
+            logger.error(f'---camera_id:{camera_id}的接收器删除失败---')
+            logger.error(f'---{e}---')
+            return "fail"
 
     def start_detect(self):
         """
@@ -143,7 +212,7 @@ class YoloManager:
                     # 2.如果出现异常
                     if is_abnormal:
                         rtmp_url = self.rtmp_list[i]
-                        handler_abnormal_context.execute(frame, receiver, rtmp_url)
+                        handler_abnormal_context.execute(frame, receiver, rtmp_url, self.identifiers)  # TODO
                     # 3.如果没有异常则跳过
                     else:
                         pass

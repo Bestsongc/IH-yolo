@@ -259,7 +259,7 @@ class ThreadingLocked:
     is called from multiple threads, only one thread at a time will be able to execute the function.
 
     Attributes:
-        lock (threading.Lock): A lock object used to manage access to the decorated function.
+        lock (threading.Lock): A receivers_lock object used to manage access to the decorated function.
 
     Example:
         ```python
