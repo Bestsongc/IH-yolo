@@ -50,17 +50,17 @@ class YoloManager:
         logger.info('yolo_config.arguments:' + str(yolo_config.arguments))
         logger.info('yolo_config.cameras:' + str(yolo_config.cameras))
         self.args = yolo_config.arguments
-        self.url_list = yolo_config.cameras
+        self.cameras = yolo_config.cameras
         # self.rtsp_list = []
         # for url in yolo_config.cameras:
         #     self.rtsp_list.append(url['camera_rtsp_url'])
         self.rtmp_list = []
         for url in yolo_config.cameras:
             self.rtmp_list.append(url['srs_rtmp_url'])
-        self.receivers = self.start_receivers(self.url_list)
+        self.receivers = self.init_receivers(self.cameras)
         self.identifiers = []
 
-    def start_receivers(self, url_list, max_workers=10):
+    def init_receivers(self, cameras, max_workers=10):
         """
         启动接收器
         :param rtsp_list: rtsp地址列表
@@ -78,18 +78,40 @@ class YoloManager:
 
         # 法2.简单多线程
         receivers = []
-        # 从url_list拿
-        for url in url_list:
+        for camera in cameras:
+            camera_id=None
             try:
-                camera_rtsp_url = url['camera_rtsp_url']
-                camera_id = url['camera_id']
+                camera_rtsp_url = camera['camera_rtsp_url']
+                camera_id = camera['camera_id']
                 receivers.append(RtspReceiver(camera_rtsp_url, camera_id))
+                logger.info(f'---成功添加camera_id:{camera_id}的接收器---')
             except Exception as e:
-                logger.error(f'---{url}启动失败---')
+                logger.error(f'---camera_id:{camera_id}的接收器启动失败---')
                 logger.error(f'---{e}---')
                 continue
         logger.info(f'---成功启动{len(receivers)}个接收器---')
         return receivers
+
+    def add_receivers(self, camera)->str:
+        '''
+        添加接收器
+        Args:
+            camera ():
+
+        Returns:
+
+        '''
+        camera_id=None
+        try:
+            camera_rtsp_url = camera['camera_rtsp_url']
+            camera_id = camera['camera_id']
+            self.receivers.append(RtspReceiver(camera_rtsp_url, camera_id))
+            logger.info(f'---成功添加camera_id:{camera_id}的接收器---')
+            return "success"
+        except Exception as e:
+            logger.error(f'---camera_id:{camera_id}的接收器启动失败---')
+            logger.error(f'---{e}---')
+            return "fail"
 
     def update_receivers(self, rtsp_list, max_workers=10):
         # TODO

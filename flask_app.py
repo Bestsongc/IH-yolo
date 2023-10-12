@@ -41,11 +41,23 @@ def start():
 
 
 # TODO
-@app.route('/yolo/updateUrl', methods=['POST'])
-def update_url():
+@app.route('/yolo/updateCameras', methods=['POST'])
+def update_cameras():
     #TODO 可以用dict来映射修改receiver，再根据线程名把额外识别者一起删了捏
     pass
 
+@app.route('/yolo/cameras/add', methods=['POST'])
+def add_camera():
+    #TODO 拿到camera
+    # camera = josn
+    # yolo_manager.add_receivers(camera)
+    pass
+def delete_camera():
+    #TODO 可以用dict来映射修改receiver，再根据线程名把额外识别者一起删了捏
+    pass
+
+def update_abnormal_item():
+    #TODO
 
 def awaiting_start_yolo():
     global is_start
@@ -63,7 +75,7 @@ if __name__ == '__main__':
     #修改主线程名字
     threading.current_thread().name = 'flask_app'
     is_start = False
-    yolo_manager = None
+    yolo_manager: YoloManager = None
     awaiting_start_yolo_thread = threading.Thread(target=lambda: awaiting_start_yolo())
     awaiting_start_yolo_thread.name = 'awaiting_start_yolo_thread'
     awaiting_start_yolo_thread.start()

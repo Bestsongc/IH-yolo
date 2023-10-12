@@ -147,10 +147,7 @@ class YoloInductor:
             # 对异常情况画标记
             # 异常条件：检测到的head，water，fire,fork数量中的任意一个相比于上一帧变多
             #TODO 判断异常条件有待修改
-            if (detectCount_map.get('head', 0) > old_detectCount_map.get('head', 0) or
-                    detectCount_map.get('water', 0) > old_detectCount_map.get('water', 0) or
-                    detectCount_map.get('fire', 0) > old_detectCount_map.get('fire', 0) or
-                    detectCount_map.get('fork', 0) > old_detectCount_map.get('fork', 0)):
+            if self.varify_abnormal(detectCount_map):
                 is_abnormal = True
                 logger.warning('有异常现象')
                 # 写异常,color为红色
@@ -161,4 +158,20 @@ class YoloInductor:
             old_detectCount_map.update(detectCount_map)
 
         return img_bgr,is_abnormal
+
+    def varify_abnormal(self, detectCount_map):
+        '''
+        判断是否异常
+        Args:
+            detectCount_map ():
+
+        Returns:
+
+        '''
+        abnormal_items = self.args['ABNORMAL_ENTITIES']
+        # 异常条件：检测到的属于abnormal_entites的实体数量中的任意一个相比于上一帧变多
+        for item in abnormal_items:
+            if detectCount_map.get(item, 0) > old_detectCount_map.get(item, 0):
+                return True
+        return False
 
