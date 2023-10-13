@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Author  : Zhuofan Shi
 # @Time    : 2023/10/12 10:49
-# @File    : my_test_thread_pool.py
+# @File    : my_test_pool.py
 # @Software: PyCharm
 from time import sleep
 
@@ -18,6 +18,43 @@ class receivers_2:
         self.running = False
     def get_frame(self):
         return self.frame
+def for_process_poll():
+    from multiprocessing import Pool
+    pool = Pool(processes=15)
+    # 初始化10个receivers,以dict形式存储
+    receivers = {}
+    for i in range(10):
+        receivers[i] = receivers_2()
+        print(f'receiver[{i}]:init')
+
+    # 使用进程池对所有receivers进行update
+    for i in range(10):
+        pool.apply_async(receivers[i].update)
+        print(f'receiver[{i}]:update')
+
+    # 过了一会我就想指定i=1的receiver停止update
+    # 等待一段时间后
+    import time
+    time.sleep(2)  # 例如，等待2秒
+
+    #展示当前进程数
+    print(f'当前进程数：{len(pool._cache)}')
+
+    # 停止receiver
+    for i in range(10):
+        receivers[i].stop_update()
+        print(f'receiver[{i}]:stopped')
+
+
+    #展示当前进程数
+    print(f'当前进程数：{len(pool._cache)}')
+
+    # 使用进程池pool.starmap来使用get_frame读取
+    while True:
+        results = pool.starmap(lambda r: r.get_frame(), [(r,) for r in receivers.values()])
+        print(results)
+
+    #     print(f'receiver[{i%10}]:',(pool.apply_async(receivers[i%10].get_frame).get()))
 
 def for_threadpool():
     import concurrent.futures
@@ -98,4 +135,4 @@ def for_multiprocessingpoll():
     #     print(f'receiver[{i%10}]:',(pool.apply_async(receivers[i%10].get_frame).get()))
 if __name__ == '__main__':
     # for_threadpool()
-    for_threadpool()
+    for_process_poll()

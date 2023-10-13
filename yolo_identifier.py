@@ -18,6 +18,7 @@ class YoloIdentifier:
         self.target_rtmp = target_rtmp
         logger.info(f'---camera_id:{source_receiver.get_camera_id()}的YoloIdentifier初始化---')
         self.running = True
+
     def stop(self):
         self.running = False
 

@@ -12,13 +12,15 @@ from logger_config import logger
 from yolo_inductor import YoloInductor
 from yolo_identifier import YoloIdentifier
 
+
+
 class HandlerAbnormalStrategy(ABC):
     '''
     处理异常策略
     '''
 
     @abstractmethod
-    def execute(self, frame, source_receiver: RtspReceiver, target_rtmp):
+    def execute(self, frame, **kwargs):
         pass
 
 
@@ -27,7 +29,7 @@ class HandlerAbnormalStrategyUploadScreenshot(HandlerAbnormalStrategy):
     上传异常的视频截图至服务器
     '''
 
-    def execute(self, frame, source_receiver, target_rtmp):
+    def execute(self, frame, **kwargs):
         # TODO
         pass
 
@@ -36,10 +38,11 @@ class HandlerAbnormalStrategyNewIdentifier(HandlerAbnormalStrategy):
     '''
     新建一个识别线程
     '''
-    def __init__(self,args):
+
+    def __init__(self, args):
         self.args = args
 
-    def execute(self, frame, source_receiver, target_rtmp):
+    def execute(self, frame, **kwargs):
         '''
         单独新开辟一条推理线程，并作为一条视频数据源不断输出到SRS
         1.如果这个receiver对应的camera_id还没有被单独开辟过推理线程，则新开辟
@@ -52,19 +55,28 @@ class HandlerAbnormalStrategyNewIdentifier(HandlerAbnormalStrategy):
         Returns:
 
         '''
-        if(True):#TODO 判断这个receiver对应的camera_id还没有被单独开辟过推理线程
-            identifier_thread = threading.Thread(target=lambda: YoloIdentifier(self.args,source_receiver, target_rtmp).process_stream_and_push())
-            identifier_thread.name = f'identifier_camera{source_receiver.get_camera_id()}_thread'
-            identifier_thread.start()
-            logger.info(f'---新启动一条推理线程{source_receiver.get_source()}->{target_rtmp}---')
-        #TODO 也许可以通过修改对象引用identifiers[]来实现删除线程的功能
+        source_receiver = kwargs['source_receiver']
+        target_rtmp = kwargs['target_rtmp']
+        identifier_process_poll= kwargs['identifier_process_poll']
+        identifiers: dict = kwargs['identifiers']
+        # 判断这个receiver对应的camera_id还没有被单独开辟过推理线程
+        if source_receiver.get_camera_id() not in identifiers:
+            logger.info(f'---开始启动camera_id:{source_receiver.get_camera_id}的identifier---')
+            # 1.新初始化
+            identifier  = YoloIdentifier(self.args, source_receiver, target_rtmp)
+            # 2.将这个对象入到字典中
+            identifiers[source_receiver.get_camera_id()] = identifier
+            # 3.启动这个推理进程
+            identifier_process_poll.async_apply(identifier.process_stream_and_push())
+            logger.info(f'---成功启动camera_id:{source_receiver.get_camera_id}的identifier---')
+
 
 class HandlerAbnormalStrategyUploadInformation(HandlerAbnormalStrategy):
     '''
     上传异常信息至服务器
     '''
 
-    def execute(self, frame, source_receiver, target_rtmp):
+    def execute(self, frame, **kwargs):
         # TODO
         pass
 
@@ -84,7 +96,7 @@ class HandlerAbnormalContext:
         '''
         self.strategy.append(strategy)
 
-    def execute(self, frame, source_receiver, target_rtmp):
+    def execute(self, frame, **kwargs):
         '''
         执行策略
         Args:
@@ -94,4 +106,4 @@ class HandlerAbnormalContext:
 
         '''
         for strategy in self.strategy:
-            strategy.execute(frame, source_receiver, target_rtmp)
+            strategy.execute(frame, **kwargs)

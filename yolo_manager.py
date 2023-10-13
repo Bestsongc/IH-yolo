@@ -16,7 +16,7 @@ from yolo_inductor import YoloInductor
 import yolo_config
 import sys
 from concurrent.futures import ThreadPoolExecutor
-
+import multiprocessing
 
 class YoloManager:
     def verify_args(self, args):
@@ -61,8 +61,11 @@ class YoloManager:
             self.rtmp_list.append(url['srs_rtmp_url'])
         self.receivers: dict = self.init_receivers(self.cameras)
         self.identifiers: dict = {}
-        self.identifier_thread_pool = ThreadPoolExecutor(
-            max_workers=self.args['MAX_IDENTIFIER_NUM'])  # TODO 进程是要使用的工作线程数。如果进程为 None 则使用 os.cpu_count() 返回的数字。
+        #TODO 开多进程池
+        # self.identifier_thread_pool = ThreadPoolExecutor(
+        #     max_workers=self.args['MAX_IDENTIFIER_NUM'])
+
+        self.identifier_process_poll = multiprocessing.Pool(processes=self.args['MAX_IDENTIFIER_NUM'])
         self.receiver_update_thread_pool = ThreadPoolExecutor(max_workers=self.args['MAX_RECEIVER_UPDATE_NUM'])  # TODO
         # 可重入锁
         self.receivers_lock = threading.RLock()
@@ -186,6 +189,12 @@ class YoloManager:
             logger.error(f'---{e}---')
             return "fail"
 
+    def add_identifier(self, camera_id, target_rtmp) -> str:
+        pass
+        #TODO
+    def delete_identifier(self, camera_id) -> str:
+        pass
+        #TODO
     def start_detect(self):
         """
         启动轮询检测器
@@ -199,7 +208,7 @@ class YoloManager:
         # 2.3.需要异常信息放入数据库
         handler_abnormal_context = HandlerAbnormalContext()
         handler_abnormal_context.add_strategy(HandlerAbnormalStrategyUploadScreenshot())
-        handler_abnormal_context.add_strategy(HandlerAbnormalStrategyNewIdentifier(yolo_config.arguments))
+        handler_abnormal_context.add_strategy(HandlerAbnormalStrategyNewIdentifier(self.args))
         handler_abnormal_context.add_strategy(HandlerAbnormalStrategyUploadInformation())
         logger.info('---成功创建YoloInductor,开始轮询检测异常---')
         while True:
@@ -212,7 +221,9 @@ class YoloManager:
                     # 2.如果出现异常
                     if is_abnormal:
                         rtmp_url = self.rtmp_list[i]
-                        handler_abnormal_context.execute(frame, receiver, rtmp_url, self.identifiers)  # TODO
+                        # 2.1.处理异常
+                        handler_abnormal_context.execute(frame, source_receiver=receiver, target_rtmp=rtmp_url,
+                                                         identifier_process_poll=self.identifier_process_poll,identifiers=self.identifiers)
                     # 3.如果没有异常则跳过
                     else:
                         pass
