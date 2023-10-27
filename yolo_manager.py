@@ -53,22 +53,13 @@ class YoloManager:
         logger.info('yolo_config.cameras:' + str(yolo_config.cameras))
         self.args = yolo_config.arguments
         self.cameras = yolo_config.cameras
-        # self.rtsp_list = []
-        # for url in yolo_config.cameras:
-        #     self.rtsp_list.append(url['camera_rtsp_url'])
-        self.rtmp_list = []
-        for url in yolo_config.cameras:
-            self.rtmp_list.append(url['srs_rtmp_url'])
-        self.receivers: dict = self.init_receivers(self.cameras)
-        self.identifiers: dict = {}
-        #TODO 开多进程池
-        # self.identifier_thread_pool = ThreadPoolExecutor(
-        #     max_workers=self.args['MAX_IDENTIFIER_NUM'])
-
         self.identifier_process_poll = multiprocessing.Pool(processes=self.args['MAX_IDENTIFIER_NUM'])
         self.receiver_update_thread_pool = ThreadPoolExecutor(max_workers=self.args['MAX_RECEIVER_UPDATE_NUM'])  # TODO
         # 可重入锁
         self.receivers_lock = threading.RLock()
+        self.receivers: dict = self.init_receivers(yolo_config.cameras)
+        self.identifiers: dict = {}
+
 
     def init_receivers(self, cameras) -> dict:
         """
@@ -195,6 +186,7 @@ class YoloManager:
     def delete_identifier(self, camera_id) -> str:
         pass
         #TODO
+
     def start_detect(self):
         """
         启动轮询检测器
@@ -212,15 +204,17 @@ class YoloManager:
         handler_abnormal_context.add_strategy(HandlerAbnormalStrategyUploadInformation())
         logger.info('---成功创建YoloInductor,开始轮询检测异常---')
         while True:
-            for i, receiver in enumerate(self.receivers):
+            #拿出self.receivers中的K，V
+            for camera_id, receiver in self.receivers.items():
                 status, frame = receiver.read()
-                logger.info(f'---receiver:{i}:收到frame--')
+                logger.info(f'---camera_id:{camera_id}:的receiver收到frame--')
                 if status:
                     # 1.使用yolo推理
                     frame, is_abnormal = yoloInductor.process_frame(frame)
                     # 2.如果出现异常
                     if is_abnormal:
-                        rtmp_url = self.rtmp_list[i]
+                        logger.info(f'---camera_id:{camera_id}:的receiver出现异常--')
+                        rtmp_url = self.cameras[camera_id]['srs_rtmp_url']
                         # 2.1.处理异常
                         handler_abnormal_context.execute(frame, source_receiver=receiver, target_rtmp=rtmp_url,
                                                          identifier_process_poll=self.identifier_process_poll,identifiers=self.identifiers)
@@ -228,7 +222,7 @@ class YoloManager:
                     else:
                         pass
                 else:
-                    logger.error(f'---{i}:收到frame失败--')
+                    logger.error(f'---{camera_id}:收到frame失败--')
                     pass
 
 

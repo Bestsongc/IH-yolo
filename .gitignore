@@ -165,3 +165,4 @@ weights/
 *.flv
 *.flv
 *.jpg
+yolo_config.py

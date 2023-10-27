@@ -22,7 +22,7 @@ class RtspReceiver(object):
     '''
     # Deleting (Calling destructor)
     def __del__(self):
-        logger.info(f'---删除Receiver:{self.source}---')
+        logger.info(f'---del Receiver:{self.source}---')
 
     def __init__(self, source,camera_id):
         # Create a VideoCapture object

@@ -38,4 +38,4 @@ cameras=[
         "isEnable": False,
         "isConnected": False
     }
-        ]
+]
