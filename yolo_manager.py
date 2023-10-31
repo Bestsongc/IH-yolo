@@ -48,6 +48,28 @@ class YoloManager:
 
     def __init__(self):
         # self.verify_args(args)
+        self.args = None
+        self.cameras =None
+        self.identifier_process_poll = None
+        self.receiver_update_thread_pool = None
+        # 可重入锁
+        self.receivers_lock = None
+        self.receivers: dict ={}
+        self.identifiers: dict = {}
+        self.re_init()
+
+    def re_init(self):
+        '''
+        重新初始化
+        Returns:
+
+        '''
+        # 1.先停止所有的接收器
+        self.stop_all_receivers()
+        # 2.再重新初始化
+        self.receivers = self.init_receivers(yolo_config.cameras)
+
+        # self.verify_args(args)
         logger.info('---YoloManager初始化---')
         logger.info('yolo_config.arguments:' + str(yolo_config.arguments))
         logger.info('yolo_config.cameras:' + str(yolo_config.cameras))
@@ -57,9 +79,8 @@ class YoloManager:
         self.receiver_update_thread_pool = ThreadPoolExecutor(max_workers=self.args['MAX_RECEIVER_UPDATE_NUM'])  # TODO
         # 可重入锁
         self.receivers_lock = threading.RLock()
-        self.receivers: dict = self.init_receivers(yolo_config.cameras)
+        self.receivers: dict = self.init_receivers(self.cameras)
         self.identifiers: dict = {}
-
 
     def init_receivers(self, cameras) -> dict:
         """
@@ -193,7 +214,7 @@ class YoloManager:
         将轮询检查每个接收器的状态，如果有异常则启动单独的持续推理
         :return:
         """
-        yoloInductor = YoloInductor(yolo_config.arguments)
+        yoloInductor = YoloInductor(self.args)
         # 设置处理异常策略
         # 2.1.上传异常的视频截图至服务器，
         # 2.2.单独新开辟一条推理线程，并作为一条视频数据源不断输出到SRS
@@ -224,6 +245,8 @@ class YoloManager:
                 else:
                     logger.error(f'---{camera_id}:收到frame失败--')
                     pass
+
+
 
 
 if __name__ == '__main__':

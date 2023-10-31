@@ -15,8 +15,8 @@ from logger_config import logger
 app = Flask(__name__)
 
 
-@app.route('/yolo/start', methods=['POST'])
-def start():
+@app.route('/yolo/openListen', methods=['POST'])
+def openListen():
     logger.debug('---收到start请求---')
     data = request.data
     json_param = json.loads(data)
@@ -55,6 +55,12 @@ def set_yolo_args():
     yolo_config.arguments = arguments
     logger.debug(f'---yolo_config.arguments:{yolo_config.arguments}---')
     return JsonResponse.success(data=None,msg= "set_yolo_args successful")
+
+def restart_yolo()
+    '''
+    重启yolo
+    Returns:
+    '''
 
 @app.route('/yolo/updateCameras', methods=['POST'])
 def update_cameras():
