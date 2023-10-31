@@ -39,8 +39,9 @@ class HandlerAbnormalStrategyNewIdentifier(HandlerAbnormalStrategy):
     新建一个识别线程
     '''
 
-    def __init__(self, args):
+    def __init__(self, args,abnormal_items):
         self.args = args
+        self.abnormal_items = abnormal_items
 
     def execute(self, frame, **kwargs):
         '''
@@ -55,19 +56,19 @@ class HandlerAbnormalStrategyNewIdentifier(HandlerAbnormalStrategy):
         Returns:
 
         '''
-        source_receiver = kwargs['source_receiver']
+        source_receiver : RtspReceiver = kwargs['source_receiver']
         target_rtmp = kwargs['target_rtmp']
         identifier_process_poll= kwargs['identifier_process_poll']
         identifiers: dict = kwargs['identifiers']
         # 判断这个receiver对应的camera_id还没有被单独开辟过推理线程
         if source_receiver.get_camera_id() not in identifiers:
-            logger.info(f'---开始启动camera_id:{source_receiver.get_camera_id}的identifier---')
-            # 1.新初始化
-            identifier  = YoloIdentifier(self.args, source_receiver, target_rtmp)
+            logger.info(f'---开始启动camera_id:{source_receiver.get_camera_id()}的identifier---')
+            # 1.初始化
+            identifier  = YoloIdentifier(self.args, self.abnormal_items,source_receiver, target_rtmp)
             # 2.将这个对象入到字典中
             identifiers[source_receiver.get_camera_id()] = identifier
             # 3.启动这个推理进程
-            identifier_process_poll.async_apply(identifier.process_stream_and_push())
+            identifier_process_poll.async_apply(identifier.process_stream_and_push())#TODO
             logger.info(f'---成功启动camera_id:{source_receiver.get_camera_id}的identifier---')
 
 

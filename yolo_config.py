@@ -3,7 +3,7 @@
 # @Time    : 2023/10/10 15:30
 # @File    : yolo_config.py
 # @Software: PyCharm
-arguments={
+arguments = {
     "ENV": "dev",
     "MODEL": "IH-821-sim.onnx",
     "CONF_THRES": 0.5,
@@ -15,27 +15,23 @@ arguments={
     "VIDEO_FPS": 10,
     "OUTPUT_FRAME_WIDTH": 1280,
     "OUTPUT_FRAME_HEIGHT": 1080,
-    "IDENTIFIER_MAX_DURATION": 10
+    "IDENTIFIER_MAX_DURATION": 10,
+    "MAX_IDENTIFIER_NUM": 6,
+    "MAX_RECEIVER_UPDATE_NUM": 6,
 }
-cameras=[
+cameras = [
     {
-        "camera_id": 1,
-        "company": "公司1",
-        "department": "部门1",
-        "camera_rtsp_url": "rtsp://admin:admin@192.168.3.107:8554/live",
+        "camera_id": 0,
+        "camera_rtsp_url": "rtsp://admin:admin@192.168.3.116:8554/live",
         "srs_rtmp_url": "rtmp://localhost/live/1/livestream",
         "srs_flv_url": "http://localhost:8080/live/1/livestream.flv",
-        "isEnable": False,
-        "isConnected": False
+
     },
     {
         "camera_id": 1,
-        "company": "公司2",
-        "department": "部门2",
-        "camera_rtsp_url": "rtsp://admin:admin@192.168.3.107:8554/live",
+        "camera_rtsp_url": "rtsp://admin:admin@192.168.3.116:8554/live",
         "srs_rtmp_url": "rtmp://localhost/live/2/livestream",
         "srs_flv_url": "http://localhost:8080/live/2/livestream.flv",
-        "isEnable": False,
-        "isConnected": False
     }
 ]
+abnormal_items = ["fire", "head", "water", "fog"]

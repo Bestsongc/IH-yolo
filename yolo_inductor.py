@@ -24,8 +24,9 @@ bbox_labelstr = {
 }
 old_detectCount_map = {}  # 上一帧检测到的每个对象的数量
 class YoloInductor:
-    def __init__(self,args):
+    def __init__(self,args,abnormal_items):
         self.args = args
+        self.abnormal_items = abnormal_items
         self.model = YOLO(model=self.args['MODEL'], task='detect')  # 加载模型
         logger.info('---YoloInductor初始化成功---')
 
@@ -168,9 +169,8 @@ class YoloInductor:
         Returns:
 
         '''
-        abnormal_items = self.args['ABNORMAL_ENTITIES']
         # 异常条件：检测到的属于abnormal_entites的实体数量中的任意一个相比于上一帧变多
-        for item in abnormal_items:
+        for item in self.abnormal_items:
             if detectCount_map.get(item, 0) > old_detectCount_map.get(item, 0):
                 return True
         return False

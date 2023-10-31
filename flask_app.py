@@ -56,11 +56,6 @@ def set_yolo_args():
     logger.debug(f'---yolo_config.arguments:{yolo_config.arguments}---')
     return JsonResponse.success(data=None,msg= "set_yolo_args successful")
 
-def restart_yolo()
-    '''
-    重启yolo
-    Returns:
-    '''
 
 @app.route('/yolo/updateCameras', methods=['POST'])
 def update_cameras():

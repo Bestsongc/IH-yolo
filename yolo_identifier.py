@@ -12,10 +12,11 @@ from yolo_inductor import YoloInductor
 
 
 class YoloIdentifier:
-    def __init__(self, args,source_receiver:RtspReceiver, target_rtmp):
+    def __init__(self, args,abnormal_items,source_receiver:RtspReceiver, target_rtmp):
         self.args = args
         self.source_receiver = source_receiver
         self.target_rtmp = target_rtmp
+        self.abnormal_items = abnormal_items
         logger.info(f'---camera_id:{source_receiver.get_camera_id()}的YoloIdentifier初始化---')
         self.running = True
 
@@ -24,7 +25,7 @@ class YoloIdentifier:
 
 
     def process_stream_and_push(self):
-        yolo_inductor = YoloInductor(self.args)
+        yolo_inductor = YoloInductor(self.args,self.abnormal_items)
         # 最大持续识别时间(单位:秒)
         identifier_max_duration = self.args['IDENTIFIER_MAX_DURATION']
         # 初始化rtmp推送器

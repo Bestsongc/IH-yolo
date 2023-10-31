@@ -48,39 +48,19 @@ class YoloManager:
 
     def __init__(self):
         # self.verify_args(args)
-        self.args = None
-        self.cameras =None
-        self.identifier_process_poll = None
-        self.receiver_update_thread_pool = None
-        # 可重入锁
-        self.receivers_lock = None
-        self.receivers: dict ={}
-        self.identifiers: dict = {}
-        self.re_init()
-
-    def re_init(self):
-        '''
-        重新初始化
-        Returns:
-
-        '''
-        # 1.先停止所有的接收器
-        self.stop_all_receivers()
-        # 2.再重新初始化
-        self.receivers = self.init_receivers(yolo_config.cameras)
-
-        # self.verify_args(args)
         logger.info('---YoloManager初始化---')
         logger.info('yolo_config.arguments:' + str(yolo_config.arguments))
         logger.info('yolo_config.cameras:' + str(yolo_config.cameras))
         self.args = yolo_config.arguments
         self.cameras = yolo_config.cameras
+        self.abnormal_items = yolo_config.abnormal_items
         self.identifier_process_poll = multiprocessing.Pool(processes=self.args['MAX_IDENTIFIER_NUM'])
         self.receiver_update_thread_pool = ThreadPoolExecutor(max_workers=self.args['MAX_RECEIVER_UPDATE_NUM'])  # TODO
         # 可重入锁
         self.receivers_lock = threading.RLock()
         self.receivers: dict = self.init_receivers(self.cameras)
         self.identifiers: dict = {}
+
 
     def init_receivers(self, cameras) -> dict:
         """
@@ -179,7 +159,6 @@ class YoloManager:
             return "fail"
 
     def delete_receiver(self, camera_id) -> str:
-        # TODO 需要考虑线程安全
         try:
             logger.info(f'---开始删除camera_id:{camera_id}的接收器---')
             # 加锁
@@ -214,22 +193,22 @@ class YoloManager:
         将轮询检查每个接收器的状态，如果有异常则启动单独的持续推理
         :return:
         """
-        yoloInductor = YoloInductor(self.args)
+        yoloInductor = YoloInductor(self.args,self.abnormal_items)
         # 设置处理异常策略
         # 2.1.上传异常的视频截图至服务器，
         # 2.2.单独新开辟一条推理线程，并作为一条视频数据源不断输出到SRS
         # 2.3.需要异常信息放入数据库
         handler_abnormal_context = HandlerAbnormalContext()
         handler_abnormal_context.add_strategy(HandlerAbnormalStrategyUploadScreenshot())
-        handler_abnormal_context.add_strategy(HandlerAbnormalStrategyNewIdentifier(self.args))
+        handler_abnormal_context.add_strategy(HandlerAbnormalStrategyNewIdentifier(self.args,self.abnormal_items))
         handler_abnormal_context.add_strategy(HandlerAbnormalStrategyUploadInformation())
         logger.info('---成功创建YoloInductor,开始轮询检测异常---')
         while True:
             #拿出self.receivers中的K，V
             for camera_id, receiver in self.receivers.items():
                 status, frame = receiver.read()
-                logger.info(f'---camera_id:{camera_id}:的receiver收到frame--')
                 if status:
+                    logger.info(f'---camera_id:{camera_id}:的receiver收到frame--')
                     # 1.使用yolo推理
                     frame, is_abnormal = yoloInductor.process_frame(frame)
                     # 2.如果出现异常
