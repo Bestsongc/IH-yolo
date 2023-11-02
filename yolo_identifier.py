@@ -5,6 +5,8 @@
 # @Software: PyCharm
 import time
 
+import cv2
+
 from logger_config import logger
 from rtmp_pusher import RtmpPusher
 from rtsp_receiver import RtspReceiver
@@ -33,7 +35,8 @@ class YoloIdentifier:
                                  self.args['OUTPUT_FRAME_HEIGHT'], self.args['VIDEO_FPS'])
 
         start_time = time.time()
-        logger.info(f'---camera_id:{self.source_receiver.get_camera_id()}的YoloIdentifier开始识别---')
+        logger.info(f'---camera_id:{self.source_receiver.get_camera_id()}的YoloIdentifier开始识别并推流---')
+        logger.info(f'---camera_id:{self.source_receiver.get_camera_id()}的推流地址rtmp:{self.target_rtmp}-')
         try:
             while self.running:
                 is_abnormal = False
@@ -44,6 +47,7 @@ class YoloIdentifier:
                     logger.error('status is false,need waiting')
                     time.sleep(1)
                     continue
+
                 # 逐帧处理
                 try:
                     frame, is_abnormal = yolo_inductor.process_frame(frame)

@@ -54,7 +54,7 @@ class YoloManager:
         self.args = yolo_config.arguments
         self.cameras = yolo_config.cameras
         self.abnormal_items = yolo_config.abnormal_items
-        self.identifier_process_poll = multiprocessing.Pool(processes=self.args['MAX_IDENTIFIER_NUM'])
+        # self.identifier_process_poll = multiprocessing.Pool(processes=self.args['MAX_IDENTIFIER_NUM']) 进程池太恶心了
         self.receiver_update_thread_pool = ThreadPoolExecutor(max_workers=self.args['MAX_RECEIVER_UPDATE_NUM'])  # TODO
         # 可重入锁
         self.receivers_lock = threading.RLock()
