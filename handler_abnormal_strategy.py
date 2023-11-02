@@ -58,7 +58,7 @@ class HandlerAbnormalStrategyNewIdentifier(HandlerAbnormalStrategy):
         '''
         source_receiver : RtspReceiver = kwargs['source_receiver']
         target_rtmp = kwargs['target_rtmp']
-        identifier_process_poll= kwargs['identifier_process_poll']
+        identifier_poll= kwargs['identifier_poll']
         identifiers: dict = kwargs['identifiers']
         # 判断这个receiver对应的camera_id还没有被单独开辟过推理线程
         if source_receiver.get_camera_id() not in identifiers:
@@ -68,7 +68,8 @@ class HandlerAbnormalStrategyNewIdentifier(HandlerAbnormalStrategy):
             # 2.将这个对象入到字典中
             identifiers[source_receiver.get_camera_id()] = identifier
             # 3.启动这个推理进程
-            identifier_process_poll.apply_async(func=identifier.process_stream_and_push())#TODO
+            # identifier_poll.apply_async(func=identifier.process_stream_and_push())#TODO
+            identifier_poll.submit(identifier.process_stream_and_push())
             logger.info(f'---成功启动camera_id:{source_receiver.get_camera_id()}的identifier---')
 
 

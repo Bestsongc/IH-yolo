@@ -54,7 +54,8 @@ class YoloManager:
         self.args = yolo_config.arguments
         self.cameras = yolo_config.cameras
         self.abnormal_items = yolo_config.abnormal_items
-        # self.identifier_process_poll = multiprocessing.Pool(processes=self.args['MAX_IDENTIFIER_NUM']) 进程池太恶心了
+        # self.identifier_poll = multiprocessing.Pool(processes=self.args['MAX_IDENTIFIER_NUM']) 进程池太恶心了
+        self.identifier_poll = ThreadPoolExecutor(max_workers = self.args['MAX_IDENTIFIER_NUM'])
         self.receiver_update_thread_pool = ThreadPoolExecutor(max_workers=self.args['MAX_RECEIVER_UPDATE_NUM'])  # TODO
         # 可重入锁
         self.receivers_lock = threading.RLock()
@@ -217,7 +218,7 @@ class YoloManager:
                         rtmp_url = self.cameras[camera_id]['srs_rtmp_url']
                         # 2.1.处理异常
                         handler_abnormal_context.execute(frame, source_receiver=receiver, target_rtmp=rtmp_url,
-                                                         identifier_process_poll=self.identifier_process_poll,identifiers=self.identifiers)
+                                                         identifier_poll=self.identifier_poll, identifiers=self.identifiers)
                     # 3.如果没有异常则跳过
                     else:
                         pass
