@@ -101,5 +101,4 @@ if __name__ == '__main__':
     yolo_manager: YoloManager
     threading.current_thread().name = 'flask_app'
     logger.info('---flask_app启动监听---')
-    yolo_start()#TODO TEST
     app.run(debug=True)

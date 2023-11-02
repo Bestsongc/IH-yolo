@@ -50,11 +50,11 @@ class YoloIdentifier:
                 except Exception as error:
                     logger.error('process_frame报错！', error)
 
-                    # 将frame推送到rtmp
-                    rtmp_pusher.push(frame)
+                # 将frame推送到rtmp
+                rtmp_pusher.push(frame)
 
                 # 自动退出功能
-                # 如果此后identifier_max_duration内没有异常，则退出
+                # 如果某个时刻没有在发现异常，且此后identifier_max_duration内没有异常，则退出这条持续监视的进程
                 if not is_abnormal:
                     if time.time() - start_time > identifier_max_duration:
                         break
