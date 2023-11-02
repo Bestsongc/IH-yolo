@@ -24,11 +24,11 @@ console_handler.setLevel(logging.DEBUG)
 
 # 设置日志格式
 # 日志格式还得加一个线程名字
-formatter = ColoredFormatter('%(asctime)s - %(threadName)s - %(filename)s - %(levelname)s - %(message)s',
+formatter = ColoredFormatter('%(asctime)s - [%(process)d] - %(threadName)s - %(filename)s - %(levelname)s - %(message)s',
                              )
 
 formatter = ColoredFormatter(
-    "%(log_color)s%(asctime)s - %(threadName)s - %(filename)s - %(levelname)s - %(message)s",
+    "%(log_color)s%(asctime)s - [%(process)d] - %(threadName)s - %(filename)s - %(levelname)s - %(message)s",
 )
 file_handler.setFormatter(formatter)
 console_handler.setFormatter(formatter)

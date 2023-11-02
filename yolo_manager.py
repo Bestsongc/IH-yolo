@@ -212,7 +212,7 @@ class YoloManager:
                     # 1.使用yolo推理
                     frame, is_abnormal = yoloInductor.process_frame(frame)
                     # 2.如果出现异常
-                    if is_abnormal:
+                    if True:#TODO if is_abnormal:
                         logger.info(f'---camera_id:{camera_id}:的receiver出现异常--')
                         rtmp_url = self.cameras[camera_id]['srs_rtmp_url']
                         # 2.1.处理异常

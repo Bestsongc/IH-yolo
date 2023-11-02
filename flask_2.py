@@ -40,6 +40,7 @@ def yolo_start():
 
     if yolo_process is not None and yolo_process.is_alive():
         # If the previous process is still alive, use os.kill to send a signal to terminate it
+        logger.info('restart yolo_process')
         yolo_process.terminate()
 
     # Start a new process

@@ -68,8 +68,8 @@ class HandlerAbnormalStrategyNewIdentifier(HandlerAbnormalStrategy):
             # 2.将这个对象入到字典中
             identifiers[source_receiver.get_camera_id()] = identifier
             # 3.启动这个推理进程
-            identifier_process_poll.async_apply(identifier.process_stream_and_push())#TODO
-            logger.info(f'---成功启动camera_id:{source_receiver.get_camera_id}的identifier---')
+            identifier_process_poll.apply_async(func=identifier.process_stream_and_push())#TODO
+            logger.info(f'---成功启动camera_id:{source_receiver.get_camera_id()}的identifier---')
 
 
 class HandlerAbnormalStrategyUploadInformation(HandlerAbnormalStrategy):
@@ -108,3 +108,6 @@ class HandlerAbnormalContext:
         '''
         for strategy in self.strategy:
             strategy.execute(frame, **kwargs)
+
+if __name__ == '__main__':
+    pass
