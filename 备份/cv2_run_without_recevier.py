@@ -3,11 +3,18 @@
 # @Time    : 2023/11/3 9:53
 # @File    : cv2_run_without_recevier.py
 # @Software: PyCharm
+import threading
+
 import cv2
 import numpy as np
 import time
+
+from rtsp_receiver import RtspReceiver
+from ultralytics import YOLO
+
+
 def run_cv2():
-    cap = cv2.VideoCapture("rtsp://admin:admin@192.168.3.114:8554/live")
+    cap = cv2.VideoCapture("rtsp://admin:admin@192.168.3.104:8554/live")
 
     # 检查摄像头是否成功打开
     if not cap.isOpened():
@@ -33,6 +40,11 @@ def run_cv2():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
+
 if __name__ == '__main__':
-    print(cv2.__version__)
-    run_cv2()
+
+    # threading.Thread(target=run_cv2).start()
+    # run_cv2()
+
+
+

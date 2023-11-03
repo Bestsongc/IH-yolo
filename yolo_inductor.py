@@ -147,7 +147,6 @@ class YoloInductor:
 
             # 对异常情况画标记
             # 异常条件：检测到的head，water，fire,fork数量中的任意一个相比于上一帧变多
-            #TODO 判断异常条件有待修改
             if self.varify_abnormal(detectCount_map):
                 is_abnormal = True
                 logger.warning('有异常现象')

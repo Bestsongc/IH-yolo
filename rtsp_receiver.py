@@ -87,14 +87,16 @@ class RtspReceiver(object):
         return self.source
 
 if __name__ == '__main__':
-    rtsp_stream_link = 'rtsp://admin:admin@192.168.3.111:8554/live'
-    video_stream_widget = RtspReceiver(rtsp_stream_link)
+    source = "rtsp://admin:admin@192.168.3.104:8554/live"
+    receiver = RtspReceiver(source, 1)
+    threading.Thread(target=lambda : receiver.update()).start()
     while True:
         try:
-            status, frame = video_stream_widget.read()
+            status, frame = receiver.read()
             if status:
-                cv2.imshow('frame', frame)
-                cv2.waitKey(1)
+                print('status is true')
+                # 保存frame到本地
+                # cv2.imwrite(f'./{time.time()}.jpg', frame)
             else:
                 print('status is false,need wating')
                 time.sleep(1)

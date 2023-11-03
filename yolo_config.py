@@ -22,7 +22,7 @@ arguments = {
 cameras = [
     {
         "camera_id": 0,
-        "camera_rtsp_url": "rtsp://admin:admin@192.168.3.112:8554/live",
+        "camera_rtsp_url": "rtsp://admin:admin@192.168.3.104:8554/live",
         "srs_rtmp_url": "rtmp://localhost/live/1/livestream",
         "srs_flv_url": "http://localhost:8080/live/1/livestream.flv",
 

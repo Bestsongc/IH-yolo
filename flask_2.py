@@ -94,6 +94,11 @@ def set_abnormal_items():
     logger.debug(f'---yolo_config.abnormal_items:{yolo_config.abnormal_items}---')
     return JsonResponse.success(data=None, msg="set_abnormal_items successful")
 
+@app.route('/yolo/startIdentifier', methods=['POST'])
+def start_new_identifier():
+    logger.debug('---start_new_identifier---')
+    data = request.data
+    identifier = json.loads(data)
 
 if __name__ == '__main__':
     yolo_process = None
