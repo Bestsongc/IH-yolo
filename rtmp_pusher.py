@@ -17,6 +17,9 @@ class RtmpPusher:
         启动ffmpeg
         :param rtmp: rtmp地址
         :return:
+
+        Args:
+            frame_width ():
         """
         # ffmpeg command
         command = ['ffmpeg',
@@ -31,8 +34,7 @@ class RtmpPusher:
                    '-pix_fmt', 'yuv420p',
                    '-preset', 'ultrafast',
                    '-f', 'flv',
-                  rtmp]
-
+                   rtmp]
         pipe_ffmpeg = sp.Popen(command, stdin=sp.PIPE)  # stdin=sp.PIPE表示将视频流作为管道输入
         return pipe_ffmpeg
 

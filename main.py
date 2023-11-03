@@ -242,6 +242,8 @@ def run_detect(source):
                '-preset', 'ultrafast',
                '-f', 'flv',
                args.RTMP_URL]
+    print("frame_width"+str(frame_width))
+    print("frame_height"+str(frame_height))
     pipe_ffmpeg = sp.Popen(command, stdin=sp.PIPE)  # stdin=sp.PIPE表示将视频流作为管道输入
 
     model = YOLO(model=args.MODEL, task='detect')  # 加载模型
@@ -346,7 +348,7 @@ if __name__ == '__main__':
     parser.add_argument('--ABNORMALFRAME_SAVEDIR', type=str, default="abnormalFrame", help='异常帧保存路径')
     parser.add_argument('--FLV_SAVEDIR', type=str, default="FlvOut", help='默认关闭(CLOSE), flv视频保存路径')
     parser.add_argument('--AUTO_CLOSE_TIME', type=int, default=-1, help='默认关闭（-1），超过多少秒自动关闭并保存视频')
-    parser.add_argument('--RTMP_URL', type=str, default="rtmp://localhost/live/livestream",
+    parser.add_argument('--RTMP_URL', type=str, default="rtmp://localhost/live/1/livestream",
                         help='推流的流媒体服务器的地址,"CLOSE"代表关闭')
     parser.add_argument('--SHOW_CV2_WINDOW', type=bool, default=False, help="是否在前台打开窗口展示")
     parser.add_argument('--VIDEO_FPS', type=int, default=10, help="输入输出统一的视频帧率") #TODO 未实现

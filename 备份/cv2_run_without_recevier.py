@@ -41,10 +41,7 @@ def run_cv2():
             break
 
 
-if __name__ == '__main__':
 
-    # threading.Thread(target=run_cv2).start()
-    # run_cv2()
 
 
 

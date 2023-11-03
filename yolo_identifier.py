@@ -39,12 +39,15 @@ class YoloIdentifier:
         logger.info(f'---camera_id:{self.source_receiver.get_camera_id()}的YoloIdentifier开始识别并推流---')
         logger.info(f'---camera_id:{self.source_receiver.get_camera_id()}的推流地址rtmp:{self.target_rtmp}-')
         try:
-
+            write_time = 0
             while self.running:
                 is_abnormal = False
                 # 获取画面
                 status, frame = self.source_receiver.read()
-                # cv2.imwrite(f'./{time.time()}.jpg', frame)
+                if write_time < 4: #TODO 可删
+                    # 写入origin文件夹
+                    cv2.imwrite(f'./origin/{time.time()}.jpg', frame)
+                    write_time += 1
                 # frame 正常啊
                 if not status:  # 如果获取画面不成功，则退出
                     logger.error('status is false,need waiting')
@@ -54,19 +57,20 @@ class YoloIdentifier:
                 # 逐帧处理
                 try:
                     frame, is_abnormal = yolo_inductor.process_frame(frame)
+                    if write_time < 4: #TODO 可删
+                        cv2.imwrite(f'./processed/{time.time()}.jpg', frame)
+                        write_time += 1
+                    # 将frame推送到rtmp
+                    rtmp_pusher.push(frame)
+                    # 自动退出功能
+                    # 如果某个时刻没有在发现异常，且此后identifier_max_duration内没有异常，则退出这条持续监视的进程
+                    if not is_abnormal:
+                        if time.time() - start_time > identifier_max_duration:
+                            break
+                    else:
+                        start_time = time.time()
                 except Exception as error:
                     logger.error('process_frame报错！', error)
-
-                # 将frame推送到rtmp
-                rtmp_pusher.push(frame)
-
-                # 自动退出功能
-                # 如果某个时刻没有在发现异常，且此后identifier_max_duration内没有异常，则退出这条持续监视的进程
-                if not is_abnormal:
-                    if time.time() - start_time > identifier_max_duration:
-                        break
-                else:
-                    start_time = time.time()
 
             # 释放资源
             rtmp_pusher.stop()

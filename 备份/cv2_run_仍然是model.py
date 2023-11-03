@@ -190,33 +190,6 @@ def run_detect(source=0):
     # 关闭图像窗口
     cv2.destroyAllWindows()
 
-def cv2_with_grab(videoPath):
-    # 视屏获取
-    cap = cv2.VideoCapture(videoPath)
-    # 判断是否正常打开
-    ret = cap.isOpened()
-    # 循环读取视频帧
-    while ret:
-        # 获取当前视频帧位置
-        now_fps = cap.get(1)
-        # 设置每 10 帧输出一次
-        if (now_fps % 10 != 0):
-            # 跳帧
-            ret = cap.grab()
-            continue
-        print("———————————————————— read fps", now_fps)
-        # 是否截取到图片；图片信息
-        ret, frame = cap.read()
-        # 对返回的图片进行文字识别
-        tp_img = process_frame(frame)
-        # cv2.imshow('tp_img', tp_img)
-        cv2.waitKey(1)
-        pass
-
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    pass
-
 # 入口函数
 if __name__ == '__main__':
     # 初始化
@@ -228,12 +201,12 @@ if __name__ == '__main__':
     model = YOLO("../IH-821-sim.onnx", task='detect')
     ABNORMAL_FRAME_SAVE_DIR = "../abnormalFrame"
 
-    # run_detect(0)
+    run_detect(0)
     # # 运行两个线程
     # for i in range(1):
     #     t = threading.Thread(target=run_detect, args=('source.streams',))
     #     t.start()
-    cv2_with_grab("rtsp://admin:admin@192.168.3.114:8554/live")
+
 
 # 视频逐帧处理代码模板
 # 不需修改任何代码，只需定义process_frame函数即可
