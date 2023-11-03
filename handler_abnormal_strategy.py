@@ -69,7 +69,7 @@ class HandlerAbnormalStrategyNewIdentifier(HandlerAbnormalStrategy):
             identifiers[source_receiver.get_camera_id()] = identifier
             # 3.启动这个推理进程
             # identifier_poll.apply_async(func=identifier.process_stream_and_push())#TODO
-            identifier_poll.submit(identifier.process_stream_and_push())
+            identifier_poll.submit(lambda r : r.process_stream_and_push(), identifier)
             logger.info(f'---成功启动camera_id:{source_receiver.get_camera_id()}的identifier---')
 
 

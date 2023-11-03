@@ -27,11 +27,5 @@ cameras = [
         "srs_flv_url": "http://localhost:8080/live/1/livestream.flv",
 
     },
-    {
-        "camera_id": 1,
-        "camera_rtsp_url": "rtsp://admin:admin@192.168.3.112:8554/live",
-        "srs_rtmp_url": "rtmp://localhost/live/2/livestream",
-        "srs_flv_url": "http://localhost:8080/live/2/livestream.flv",
-    }
 ]
 abnormal_items = ["fire", "head", "water", "fog"]
